@@ -10,6 +10,7 @@
  * Copyright 2010 uroskn
  * Copyright 2011 Logan Watt <logan.watt@gmail.com>
  * Copyright 2011 Jan Kyska
+ * Copyright 2012 Moloch <moloch38@gmail.com>
  *
  * Modified by Martin Westergaard J�rgensen <martinwj2005@gmail.com> to support  * indexed and hybrid tables
  *
@@ -17,6 +18,8 @@
  *
  * 2009-01-04 - <james.dickson@comhem.se> - Slightly modified (or "fulhack" as 
  * we say in sweden)  to support cain .lst files.
+ *
+ * 2012 - Modified by Moloch to create Python bindings
  *
  * This file is part of rcracki_mt.
  *
@@ -916,22 +919,22 @@ boost::python::dict crackSingleMd5(std::string sHash, std::string pathToTables)
 {
 	std::vector<std::string> vPathName;
 	std::vector<std::string> vDefaultRainbowTablePath;
-	std::string sWildCharPathName		= "";
-	std::string sInputType				= "";
-	std::string outputFile				= "";
-	std::string sApplicationPath		= "";
-	std::string sIniPathName			= "rcracki_mt.ini";
-	std::string sSessionPathName		= "rcracki.session";
-	std::string sProgressPathName		= "rcracki.progress";
-	std::string sPrecalcPathName		= "rcracki.precalc";
-	bool resumeSession					= false;
-	bool debug							= false;
-	bool keepPrecalcFiles				= false;
-	bool runSha1AgainstMysqlSha1 		= false;
-	int enableGPU						= 0;
-	std::string sAlgorithm				= "";
-	int maxThreads						= 1;
-	uint64 maxMem						= 0;
+	std::string sWildCharPathName       = "";
+	std::string sInputType              = "";
+	std::string outputFile              = "";
+	std::string sApplicationPath        = "";
+	std::string sIniPathName            = "rcracki_mt.ini";
+	std::string sSessionPathName        = "rcracki.session";
+	std::string sProgressPathName       = "rcracki.progress";
+	std::string sPrecalcPathName        = "rcracki.precalc";
+	bool resumeSession                  = false;
+	bool debug                          = false;
+	bool keepPrecalcFiles               = false;
+	bool runSha1AgainstMysqlSha1        = false;
+	int enableGPU                       = 0;
+	std::string sAlgorithm              = "";
+	int maxThreads                      = 1;
+	uint64 maxMem                       = 0;
 	CHashSet hashSet;
 	std::vector<std::string> vHash;
 
@@ -974,8 +977,8 @@ boost::python::dict crackSingleMd5(std::string sHash, std::string pathToTables)
 
 		if (!hashSet.GetPlain(tmpHash, sPlain, sBinary))
 		{
-			sPlain  = "<notfound>";
-			sBinary = "<notfound>";
+			sPlain  = "<Not Found>";
+			sBinary = "<Not Found>";
 		}
 		results[vHash[i].c_str()] = sPlain.c_str();
 	}

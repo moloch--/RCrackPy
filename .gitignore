@@ -6,6 +6,9 @@
 *.lo
 *.o
 
+# Temp files
+*.md~
+
 # Compiled Dynamic libraries
 *.so
 

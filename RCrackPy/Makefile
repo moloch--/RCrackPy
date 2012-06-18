@@ -1,9 +1,11 @@
+# RCrackPy - Python bindings for rcracki_mt
 # rcracki_mt is a multithreaded implementation and fork of the original 
-# RainbowCrack
+# RainbowCrack 
 #
 # Copyright Martin Westergaard Jørgensen <martinwj2005@gmail.com>
 # Copyright 2009, 2010 Daniël Niggebrugge <niggebrugge@fox-it.com>
 # Copyright 2009, 2010, 2011 James Nobis <quel@quelrod.net>
+# Copyright 2012, Moloch <moloch38@gmail.com>
 #
 # This file is part of rcracki_mt.
 #
