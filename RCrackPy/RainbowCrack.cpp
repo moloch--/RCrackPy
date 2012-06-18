@@ -912,22 +912,74 @@ int rcracki(int argc, char* argv[])
 	return 0;
 }
 
-boost::python::dict crackSingleMd5(std::string hash, std::string tables)
+boost::python::dict crackSingleMd5(std::string sHash, std::string pathToTables)
 {
+	std::vector<std::string> vPathName;
+	std::vector<std::string> vDefaultRainbowTablePath;
+	std::string sWildCharPathName		= "";
+	std::string sInputType				= "";
+	std::string outputFile				= "";
+	std::string sApplicationPath		= "";
 	std::string sIniPathName			= "rcracki_mt.ini";
-	bool writeOutput					= false;
 	std::string sSessionPathName		= "rcracki.session";
 	std::string sProgressPathName		= "rcracki.progress";
 	std::string sPrecalcPathName		= "rcracki.precalc";
 	bool resumeSession					= false;
-	bool useDefaultRainbowTablePath		= false;
 	bool debug							= false;
 	bool keepPrecalcFiles				= false;
 	bool runSha1AgainstMysqlSha1 		= false;
+	int enableGPU						= 0;
+	std::string sAlgorithm				= "";
+	int maxThreads						= 1;
+	uint64 maxMem						= 0;
+	CHashSet hashSet;
+	std::vector<std::string> vHash;
 
+	/* Setup hashes */
+	if (NormalizeHash(sHash)) {
+		vHash.push_back(sHash);
+	} else {
+		std::ostringstream stringBuilder;
+		stringBuilder << "Invalid hash: " << sHash.c_str();
+		std::string message = stringBuilder.str();
+        PyErr_SetString(PyExc_ValueError, message.c_str());
+        throw boost::python::error_already_set();
+	}
+
+	/* Load rainbow tables */
+	vDefaultRainbowTablePath.push_back(pathToTables);
+	for (uint32 i = 0; i < vDefaultRainbowTablePath.size(); i++)
+	{
+		std::vector<std::string> vPart;
+		if (SeperateString(vDefaultRainbowTablePath[i], ".=", vPart))
+		{
+			std::string lineAlgorithm = vPart[1];
+			std::string linePath = vPart[2];
+			if (lineAlgorithm == sAlgorithm)
+				GetTableList(linePath, vPathName);
+		}
+	}
+
+	/* Start cracking! */
 	CCrackEngine crackEngine;
 	crackEngine.setSession(sSessionPathName, sProgressPathName, sPrecalcPathName, keepPrecalcFiles);
 	crackEngine.Run(vPathName, hashSet, maxThreads, maxMem, resumeSession, debug, enableGPU);
+
+	/* Gather results */
+	boost::python::dict results;
+	for (uint32 i = 0; i < vHash.size(); i++)
+	{
+		std::string sPlain, sBinary;
+		std::string tmpHash = vHash[i];
+
+		if (!hashSet.GetPlain(tmpHash, sPlain, sBinary))
+		{
+			sPlain  = "<notfound>";
+			sBinary = "<notfound>";
+		}
+		results[vHash[i].c_str()] = sPlain.c_str();
+	}
+	return results;
 }
 
 /* Python constructor (required) */
