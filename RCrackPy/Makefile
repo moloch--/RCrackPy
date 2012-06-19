@@ -178,7 +178,7 @@ CrackEngine.o: $(COMMON_API_PATH)/Public.h HashSet.h \
 	$(COMMON_API_PATH)/ChainWalkSet.h rcrackiThread.h \
 	$(COMMON_API_PATH)/RTReader.h $(COMMON_API_PATH)/RTIReader.h \
 	$(COMMON_API_PATH)/RTI2Reader.h CrackEngine.h CrackEngine.cpp
-	$(CC) $(CFLAGS) CrackEngine.cpp
+	$(CC) $(CFLAGS) -I$(PYTHON) -I$(BOOST_INC) CrackEngine.cpp
 
 fast_md5.o: $(COMMON_API_PATH)/fast_md5.h $(COMMON_API_PATH)/fast_md5.cpp \
 	$(COMMON_API_PATH)/global.h

@@ -27,7 +27,6 @@
  * along with rcracki_mt.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <iostream>
 #include "CrackEngine.h"
 #include "RTReader.h"
 #include "RTIReader.h"
@@ -48,10 +47,13 @@ CCrackEngine::CCrackEngine()
 
 	sSessionPathName = "";
 	sProgressPathName = "";
+	m_thread_state = PyEval_SaveThread();
 }
 
 CCrackEngine::~CCrackEngine()
 {
+	PyEval_RestoreThread(m_thread_state);
+	m_thread_state = NULL;
 }
 
 //////////////////////////////////////////////////////////////////////

@@ -28,6 +28,9 @@
 #ifndef _CRACKENGINE_H
 #define _CRACKENGINE_H
 
+#include <python2.7/Python.h>
+#include <boost/python.hpp>
+
 #include "Public.h"
 #include "HashSet.h"
 #include "ChainWalkContext.h"
@@ -85,6 +88,7 @@ private:
 	int m_nTotalFalseAlarm;
 	uint64 m_nTotalChainWalkStepDueToFalseAlarm;
 	FILE *m_fChains;
+	PyThreadState * m_thread_state;
 
 private:
 	void ResetStatistics();
