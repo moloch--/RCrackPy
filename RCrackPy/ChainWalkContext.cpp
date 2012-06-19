@@ -27,6 +27,8 @@
 
 #include "ChainWalkContext.h"
 
+#include <python2.7/Python.h>
+#include <boost/python.hpp>
 #include <ctype.h>
 
 //////////////////////////////////////////////////////////////////////
@@ -193,7 +195,10 @@ bool CChainWalkContext::LoadCharset( std::string sName )
 		printf("charset %s not found in charset.txt\n", sName.c_str());
 	}
 	else
-		printf("can't open charset configuration file\n");
+	{
+        PyErr_SetString(PyExc_ValueError, "Can't open charset configuration file");
+        throw boost::python::error_already_set();
+	}
 
 	return false;
 }
@@ -528,8 +533,8 @@ void CChainWalkContext::Dump()
 	//printf("plain charset content: %s\n", m_sPlainCharsetContent.c_str());
 	//for (i = 0; i <= m_nPlainLenMax; i++)
 	//	printf("plain space up to %d: %s\n", i, uint64tostr(m_nPlainSpaceUpToX[i]).c_str());
-	printf("plain space total: %s\n", uint64tostr(m_nPlainSpaceTotal).c_str());
 
+	printf("plain space total: %s\n", uint64tostr(m_nPlainSpaceTotal).c_str());
 	printf("rainbow table index: %d\n", m_nRainbowTableIndex);
 	printf("reduce offset: %s\n", uint64tostr(m_nReduceOffset).c_str());
 	printf("\n");

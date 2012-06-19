@@ -167,7 +167,7 @@ BaseRTReader.o: $(COMMON_API_PATH)/BaseRTReader.h \
 ChainWalkContext.o: $(COMMON_API_PATH)/ChainWalkContext.h \
 	$(COMMON_API_PATH)/ChainWalkContext.cpp $(COMMON_API_PATH)/HashRoutine.h \
 	$(COMMON_API_PATH)/Public.h
-	$(CC) $(CFLAGS) $(COMMON_API_PATH)/ChainWalkContext.cpp
+	$(CC) $(CFLAGS) -I$(PYTHON) -I$(BOOST_INC) $(COMMON_API_PATH)/ChainWalkContext.cpp
 
 ChainWalkSet.o: $(COMMON_API_PATH)/Public.h $(COMMON_API_PATH)/ChainWalkSet.h \
 	$(COMMON_API_PATH)/ChainWalkSet.cpp

@@ -76,7 +76,7 @@ std::string CChainWalkSet::CheckOrRotatePreCalcFile()
 			{
 				// We might want to vPrecalcFiles.push_back(sReturnPreCalcPath) if we just created this file
 				// We don't as only newly generated chainwalksets will be stored to this new file, so we don't have to look there
-				if (debug) printf("Debug: Using for precalc: %s\n", sReturnPreCalcPath.c_str());
+				if (debug) printf("[Debug]: Using file for precalc %s\n", sReturnPreCalcPath.c_str());
 				fclose(file);
 				return sReturnPreCalcPath;
 			}
@@ -112,7 +112,7 @@ void CChainWalkSet::updateUsedPrecalcFiles()
 
 void CChainWalkSet::removePrecalcFiles()
 {
-	if (debug) printf("Debug: Removing precalc files.\n");
+	if (debug) printf("[Debug]: Removing precalc files.\n");
 	updateUsedPrecalcFiles();
 	std::string sCurrentPrecalcPathName = "";
 	std::string sCurrentPrecalcIndexPathName = "";
@@ -123,15 +123,15 @@ void CChainWalkSet::removePrecalcFiles()
 		sCurrentPrecalcPathName = vPrecalcFiles[i];
 		sCurrentPrecalcIndexPathName = sCurrentPrecalcPathName + ".index";
 
-		if (debug) printf("Debug: Removing precalc file: %s\n", sCurrentPrecalcPathName.c_str());
+		if (debug) printf("[Debug]: Removing precalc file: %s\n", sCurrentPrecalcPathName.c_str());
 
 		if (remove(sCurrentPrecalcPathName.c_str()) != 0)
-			if (debug) printf("Debug: Failed removing precalc file: %s\n", sCurrentPrecalcPathName.c_str());
+			if (debug) printf("[Debug]: Failed removing precalc file: %s\n", sCurrentPrecalcPathName.c_str());
 
-		if (debug) printf("Debug: Removing precalc index file: %s\n", sCurrentPrecalcIndexPathName.c_str());
+		if (debug) printf("[Debug]: Removing precalc index file: %s\n", sCurrentPrecalcIndexPathName.c_str());
 
 		if (remove(sCurrentPrecalcIndexPathName.c_str()) != 0)
-			if (debug) printf("Debug: Failed removing precalc index file: %s\n", sCurrentPrecalcIndexPathName.c_str());
+			if (debug) printf("[Debug]: Failed removing precalc index file: %s\n", sCurrentPrecalcIndexPathName.c_str());
 
 	}
 }
@@ -175,8 +175,8 @@ bool CChainWalkSet::FindInFile(uint64* pIndexE, unsigned char* pHash, int nHashL
 					offset += ((atoi(vPart[3].c_str())-1) * sizeof(uint64));
 				}
 				else {
-					// corrupt file
-					printf("Corrupted precalculation file!\n");
+					if (debug)
+						printf("[Debug]: Corrupted pre-calculation file!\n");
 					gotPrecalcOnLine = -1;
 					break;
 				}
@@ -188,7 +188,7 @@ bool CChainWalkSet::FindInFile(uint64* pIndexE, unsigned char* pHash, int nHashL
 	{
 		if (debug)
 		{
-			std::cout << "Debug: Reading pre calculations from file, line "
+			std::cout << "[Debug]: Reading pre calculations from file, line "
 				<< gotPrecalcOnLine << " offset " << offset << std::endl;
 		}
 		
@@ -201,16 +201,22 @@ bool CChainWalkSet::FindInFile(uint64* pIndexE, unsigned char* pHash, int nHashL
 			// We should do some verification here, for example by recalculating the middle chain, to catch corrupted files
 			if(fread(pIndexE, sizeof(uint64), (unsigned long)m_nRainbowChainLen-1, fp) != (unsigned long)m_nRainbowChainLen-1)
 			{
-				std::cout << "Error reading " << sCurrentPrecalcPathName
-					<< std::endl;
+				if ( debug )
+				{
+					std::cout << "Error reading " << sCurrentPrecalcPathName
+						<< std::endl;
+				}
 			}
 
 			fclose(fp);
 		}
 		else
 		{
-			std::cout << "Cannot open precalculation file "
-				<<  sCurrentPrecalcPathName << "." << std::endl;
+			if ( debug )
+			{
+				std::cout << "[Debug]: Cannot open precalculation file "
+					<<  sCurrentPrecalcPathName << "." << std::endl;
+			}
 		}
 
 		//printf("\npIndexE[0]: %s\n", uint64tostr(pIndexE[0]).c_str());
@@ -224,7 +230,7 @@ bool CChainWalkSet::FindInFile(uint64* pIndexE, unsigned char* pHash, int nHashL
 
 void CChainWalkSet::StoreToFile(uint64* pIndexE, unsigned char* pHash, int nHashLen)
 {
-	if (debug) printf("\nDebug: Storing precalc\n");
+	if (debug) printf("\n[Debug]: Storing precalc\n");
 	
 	std::string sCurrentPrecalcPathName = CheckOrRotatePreCalcFile();
 	std::string sCurrentPrecalcIndexPathName = sCurrentPrecalcPathName + ".index";

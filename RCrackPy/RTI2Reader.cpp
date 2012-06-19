@@ -587,8 +587,6 @@ int RTI2Reader::readChains(unsigned int &numChains, RainbowChainO *pData)
 		numChains = readChains; // Update how many chains we read
 
 	chainPosition += readChains;
-	std::cout << "Chain Position is now " << chainPosition << std::endl;
-
 	return 0;
 }
 

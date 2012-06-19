@@ -117,7 +117,7 @@ void GetTableList( std::string sWildCharPathName, std::vector<std::string>& vPat
 	//printf("Found %d rainbowtables (files) in %d sub directories...\n", vPathName.size(), subDir_count);
 }
 #else
-//void GetTableList(int argc, char* argv[], vector<string>& vPathName)
+
 void GetTableList( std::string sWildCharPathName, std::vector<std::string>& vPathName )
 {
 	struct stat buf;
@@ -327,13 +327,13 @@ bool LMPasswordCorrectCase( std::string sLMPassword, unsigned char* pNTLMHash, s
 	return fRet;
 }
 
+/* Cracks a single hash and returns a Python dictionary */
 boost::python::dict singleHash(std::string sHash, std::string pathToTables,
-		std::string outputFile, std::string sIniPathName,
-		std::string sSessionPathName, std::string sProgressPathName,
-		std::string sPrecalcPathName, bool debug, bool keepPrecalcFiles,
-		int enableGPU, int maxThreads, uint64 maxMem)
+		std::string outputFile, std::string sSessionPathName,
+		std::string sProgressPathName, std::string sPrecalcPathName,
+		bool debug, bool keepPrecalcFiles, int enableGPU, int maxThreads,
+		uint64 maxMem)
 {
-
 	CHashSet hashSet;
 	bool resumeSession = false; // Sessions not currently supported
 	std::vector<std::string> verifiedHashes;
@@ -398,7 +398,6 @@ BOOST_PYTHON_MODULE(RainbowCrack)
 			arg("sHash"),
 			arg("pathToTables"),
 			arg("outputFile") = "",
-			arg("sIniPathName") = "rcracki_mt.ini",
 			arg("sSessionPathName") = "rcracki.session",
 			arg("sProgressPathName") = "rcracki.progress",
 			arg("sPrecalcPathName") = "rcracki.precalc",
@@ -410,7 +409,7 @@ BOOST_PYTHON_MODULE(RainbowCrack)
 		),
 		"single_hash(): Used to crack any single LM/NTLM/MD5 hash passed as an argument"
 	);
-	// def("text_file");
+	// def("");
 	// def("cain_file");
 	// def("pwdump_file");
 }

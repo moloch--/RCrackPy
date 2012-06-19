@@ -299,7 +299,6 @@ int RTIReader::readChains(uint32 &numChains, RainbowChainO *pData)
 		numChains = readChains; // update how many chains we read
 
 	chainPosition += readChains;
-	std::cout << "Chain Position is now " << chainPosition << std::endl;
 	return EXIT_SUCCESS;	
 }
 

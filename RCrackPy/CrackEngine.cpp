@@ -144,130 +144,6 @@ RainbowChain *CCrackEngine::BinarySearch(RainbowChain *pChain, int nChainCountRe
 	return NULL;
 }
 
-// not used currently, leaving code for future checkpoints
-//bool CCrackEngine::CheckAlarm(RainbowChain* pChain, int nGuessedPos, unsigned char* pHash, CHashSet& hs)
-//{
-//	CChainWalkContext cwc;
-//	//uint64 nIndexS = pChain->nIndexS >> 16;
-//	uint64 nIndexS = pChain->nIndexS & 0x0000FFFFFFFFFFFFULL; // for first 6 bytes
-//	cwc.SetIndex(nIndexS);
-//	int nPos;
-//	for (nPos = 0; nPos < nGuessedPos; nPos++)
-//	{
-//		cwc.IndexToPlain();
-//		cwc.PlainToHash();
-//		cwc.HashToIndex(nPos);
-//		// Not using checkpoints atm
-//		/*
-//		switch(nPos)
-//		{
-//		case 5000:
-//				if((cwc.GetIndex() & 0x00000001) != (pChain->nCheckPoint & 0x00000080) >> 7)
-//				{
-//					m_nTotalFalseAlarmSkipped += 10000 - 5000;
-////					printf("CheckPoint caught false alarm at position 7600\n");
-//					return false;
-//				}
-//				break;
-//		case 6000:
-//				if((cwc.GetIndex() & 0x00000001) != (pChain->nCheckPoint & 0x00000040) >> 6)
-//				{
-////					printf("CheckPoint caught false alarm at position 8200\n");
-//					m_nTotalFalseAlarmSkipped += 10000 - 6000;
-//					return false;
-//				}
-//				break;
-//
-//		case 7600:
-//				if((cwc.GetIndex() & 0x00000001) != (pChain->nCheckPoint & 0x00000020) >> 5)
-//				{
-////					printf("CheckPoint caught false alarm at position 8700\n");
-//					m_nTotalFalseAlarmSkipped += 10000 - 7600;
-//					return false;
-//				}
-//				break;
-//
-//		case 8200:
-//				if((cwc.GetIndex() & 0x00000001) != (pChain->nCheckPoint & 0x00000010) >> 4)
-//				{
-////					printf("CheckPoint caught false alarm at position 9000\n");
-//					m_nTotalFalseAlarmSkipped += 10000 - 8200;
-//					return false;
-//				}
-//				break;
-//
-//			case 8700:
-//				if((cwc.GetIndex() & 0x00000001) != (pChain->nCheckPoint & 0x00000008) >> 3)
-//				{
-////					printf("CheckPoint caught false alarm at position 9300\n");
-//					m_nTotalFalseAlarmSkipped += 10000 - 8700;
-//					return false;
-//				}
-//
-//				break;
-//			case 9000:
-//				if((cwc.GetIndex() & 0x00000001) != (pChain->nCheckPoint & 0x00000004) >> 2)
-//				{
-////					printf("CheckPoint caught false alarm at position 9600\n");
-//					m_nTotalFalseAlarmSkipped += 10000 - 9000;
-//					return false;
-//				}
-//
-//				break;
-//			case 9300:
-//				if((cwc.GetIndex() & 0x00000001) != (pChain->nCheckPoint & 0x00000002) >> 1)
-//				{
-////					printf("CheckPoint caught false alarm at position 9600\n");
-//					m_nTotalFalseAlarmSkipped += 10000 - 9300;
-//					return false;
-//				}
-//				break;
-//			case 9600:
-//				if((cwc.GetIndex() & 0x00000001) != (pChain->nCheckPoint & 0x00000001))
-//				{
-////					printf("CheckPoint caught false alarm at position 9600\n");
-//					m_nTotalFalseAlarmSkipped += 10000 - 9600;
-//					return false;
-//				}
-//				break;
-//
-//		}*/
-//	}
-//	cwc.IndexToPlain();
-//	cwc.PlainToHash();
-//	if (cwc.CheckHash(pHash))
-//	{
-//		printf("plaintext of %s is %s\n", cwc.GetHash().c_str(), cwc.GetPlain().c_str());
-//		hs.SetPlain(cwc.GetHash(), cwc.GetPlain(), cwc.GetBinary());
-//		return true;
-//	}
-//
-//	return false;
-//}
-
-//bool CCrackEngine::CheckAlarmOld(RainbowChainO* pChain, int nGuessedPos, unsigned char* pHash, CHashSet& hs)
-//{
-//	CChainWalkContext cwc;
-//	cwc.SetIndex(pChain->nIndexS);
-//	int nPos;
-//	for (nPos = 0; nPos < nGuessedPos; nPos++)
-//	{
-//		cwc.IndexToPlain();
-//		cwc.PlainToHash();
-//		cwc.HashToIndex(nPos);
-//	}
-//	cwc.IndexToPlain();
-//	cwc.PlainToHash();
-//	if (cwc.CheckHash(pHash))
-//	{
-//		printf("plaintext of %s is %s\n", cwc.GetHash().c_str(), cwc.GetPlain().c_str());
-//		hs.SetPlain(cwc.GetHash(), cwc.GetPlain(), cwc.GetBinary());
-//		return true;
-//	}
-//
-//	return false;
-//}
-
 void CCrackEngine::GetChainIndexRangeWithSameEndpoint(RainbowChainO* pChain,
 													  int nRainbowChainCount,
 													  int nMatchingIndexE,
@@ -296,8 +172,6 @@ void CCrackEngine::SearchTableChunkOld(RainbowChainO* pChain, int nRainbowChainL
 {
 	std::vector<std::string> vHash;
 	hs.GetLeftHashWithLen(vHash, CChainWalkContext::GetHashLen());
-	printf("searching for %lu hash%s...\n", (unsigned long)vHash.size(),
-										   vHash.size() > 1 ? "es" : "");
 
 	uint64 nChainWalkStep = 0;
 	int nFalseAlarm = 0;
@@ -330,7 +204,7 @@ void CCrackEngine::SearchTableChunkOld(RainbowChainO* pChain, int nRainbowChainL
 	#endif
 	// else set it to 5 or something (for linux)?
 
-	bool pausing = false;
+	//bool pausing = false;
 
 	uint32 nHashIndex;
 	for (nHashIndex = 0; nHashIndex < vHash.size(); nHashIndex++)
@@ -375,42 +249,7 @@ void CCrackEngine::SearchTableChunkOld(RainbowChainO* pChain, int nRainbowChainL
 			}
 		}
 		#else
-		/* Disable pausing
-		int c = tty_getchar();
-		if (c >= 0) {
-			tty_flush();
-			if (c==112) { // = p
-				pausing = true;
-				printf( "\nPausing, press 'p' again to continue... ");
-
-				timeval tv;
-				timeval tv2;
-				timeval final;
-				gettimeofday( &tv, NULL );
-
-				while (pausing)
-				{
-					if ((c = tty_getchar()) >= 0)
-					{
-						tty_flush();
-						if (c == 112)
-						{
-							printf( " [Continuing]\n");
-							pausing = false;
-							gettimeofday( &tv2, NULL );
-							final = sub_timeofday( tv2, tv );
-							float fTime = 1.0f * final.tv_sec + 1.0f * final.tv_usec / 1000000;
-							m_fTotalCryptanalysisTime -= fTime;
-						}
-					}
-					usleep(500*1000);
-				}
-			}
-			else {
-				printf( "\nPress 'p' to pause...\n");
-			}
-		}
-		*/
+		/* Disabled pausing */
 		#endif
 		unsigned char TargetHash[MAX_HASH_LEN];
 		int nHashLen;
@@ -431,8 +270,6 @@ void CCrackEngine::SearchTableChunkOld(RainbowChainO* pChain, int nRainbowChainL
 													fNewlyGenerated,
 													debug,
 													sPrecalcPathName);
-//		printf("Debug: using %s walk for %s\n", fNewlyGenerated ? "newly generated" : "existing",
-//					vHash[nHashIndex].c_str());
 
 		if (fNewlyGenerated)
 		{
@@ -442,8 +279,11 @@ void CCrackEngine::SearchTableChunkOld(RainbowChainO* pChain, int nRainbowChainL
 
 			gettimeofday( &tv, NULL );
 
-			printf("Pre-calculating hash %lu of %lu.%-20s\r",
-				(unsigned long)nHashIndex+1, (unsigned long)vHash.size(), "");
+			if ( debug )
+			{
+				printf("[Debug]: Pre-calculating hash %lu of %lu.%-20s\r",
+					(unsigned long)nHashIndex+1, (unsigned long)vHash.size(), "");
+			}
 			threadPool.clear();
 			pThreads.clear();
 
@@ -518,9 +358,11 @@ void CCrackEngine::SearchTableChunkOld(RainbowChainO* pChain, int nRainbowChainL
 		threadPool.clear();
 		pThreads.clear();
 
-		printf("Checking false alarms for hash %lu of %lu.%-20s\r",
-			(unsigned long)nHashIndex+1, (unsigned long)vHash.size(), "");
-
+		if ( debug )
+		{
+			printf("[Debug]: Checking false alarms for hash %lu of %lu.%-20s\r",
+				(unsigned long)nHashIndex+1, (unsigned long)vHash.size(), "");
+		}
 		int i;
 		for (i = 0; i < maxThreads; i++)
 		{
@@ -690,7 +532,7 @@ void CCrackEngine::SearchTableChunk(RainbowChain* pChain, int nRainbowChainLen, 
 	#endif
 	// else set it to 5 or something (for linux)?
 
-	bool pausing = false;
+	// bool pausing = false;
 
 	uint32 nHashIndex;
 	for (nHashIndex = 0; nHashIndex < vHash.size(); nHashIndex++)
@@ -735,40 +577,7 @@ void CCrackEngine::SearchTableChunk(RainbowChain* pChain, int nRainbowChainLen, 
 			}
 		}
 		#else
-		int c = tty_getchar();
-		if (c >= 0) {
-			tty_flush();
-			if (c==112) { // = p
-				pausing = true;
-				//printf( "\nPausing, press 'p' again to continue... ");
-
-				timeval tv;
-				timeval tv2;
-				timeval final;
-				gettimeofday( &tv, NULL );
-
-				while (pausing)
-				{
-					if ((c = tty_getchar()) >= 0)
-					{
-						tty_flush();
-						if (c == 112)
-						{
-							//printf( " [Continuing]\n");
-							pausing = false;
-							gettimeofday( &tv2, NULL );
-							final = sub_timeofday( tv2, tv );
-							float fTime = 1.0f * final.tv_sec + 1.0f * final.tv_usec / 1000000;
-							m_fTotalCryptanalysisTime -= fTime;
-						}
-					}
-					usleep(500*1000);
-				}
-			}
-			else {
-				//printf( "\nPress 'p' to pause...\n");
-			}
-		}
+			/* Nothing here, move along */
 		#endif
 		unsigned char TargetHash[MAX_HASH_LEN];
 		int nHashLen;
@@ -875,8 +684,8 @@ void CCrackEngine::SearchTableChunk(RainbowChain* pChain, int nRainbowChainLen, 
 		threadPool.clear();
 		pThreads.clear();
 
-		if (debug) {
-			printf("Checking false alarms for hash %lu of %lu.%-20s\r",
+		if ( debug ) {
+			printf("[Debug]: Checking false alarms for hash %lu of %lu.%-20s\r",
 				(unsigned long)nHashIndex+1, (unsigned long)vHash.size(), "");
 		}
 
@@ -1066,10 +875,10 @@ void CCrackEngine::SearchRainbowTable( std::string pathName, CHashSet& hs )
 
 		if (debug) 
 		{
-			std::cout << "Debug: Saving " << bytesForChainWalkSet
+			std::cout << "[Debug]: Saving " << bytesForChainWalkSet
 				<< " bytes of memory for chainwalkset." << std::endl;
 		
-			std::cout << "Debug: This is a table in .rt format." << std::endl;
+			std::cout << "[Debug]: This is a table in .rt format." << std::endl;
 		}
 
 		static CMemoryPool mp( bytesForChainWalkSet, debug, maxMem );
@@ -1078,7 +887,7 @@ void CCrackEngine::SearchRainbowTable( std::string pathName, CHashSet& hs )
 
 		if( debug )
 		{
-			std::cout << "Debug: Allocate " << nAllocatedSize
+			std::cout << "[Debug]: Allocate " << nAllocatedSize
 				<< " bytes, filelen " << reader->getDataFileSize() << std::endl;
 		}
 
@@ -1114,7 +923,7 @@ void CCrackEngine::SearchRainbowTable( std::string pathName, CHashSet& hs )
 				// Verify table chunk
 				if( debug && !fVerified )
 				{
-					std::cout << "Debug: verify the file..." << std::endl;
+					std::cout << "[Debug]: verify the file..." << std::endl;
 
 					// Chain length test
 					int nIndexToVerify = nChains / 2;
@@ -1158,7 +967,8 @@ void CCrackEngine::SearchRainbowTable( std::string pathName, CHashSet& hs )
 				gettimeofday( &tv2, NULL );
 				final = sub_timeofday( tv2, tv );
 				fTime = 1.0f * final.tv_sec + 1.0f * final.tv_usec / 1000000;
-				std::cout << "cryptanalysis time: " << fTime <<" s" << std::endl;
+				if ( debug )
+					std::cout << "[Debug]: cryptanalysis time: " << fTime <<" s" << std::endl;
 				m_fTotalCryptanalysisTime += fTime;
 
 				// Already finished?
@@ -1167,8 +977,8 @@ void CCrackEngine::SearchRainbowTable( std::string pathName, CHashSet& hs )
 			}
 		}
 
-		else
-			std::cout << "memory allocation fail" << std::endl;
+		else if ( debug )
+			std::cout << "[Debug]: memory allocation fail" << std::endl;
 
 		// XXX
 		// delete pChain;
@@ -1185,10 +995,10 @@ void CCrackEngine::SearchRainbowTable( std::string pathName, CHashSet& hs )
 
 		if (debug)
 		{
-			std::cout << "Debug: Saving " << bytesForChainWalkSet
+			std::cout << "[Debug]: Saving " << bytesForChainWalkSet
 				<< " bytes of memory for chainwalkset." << std::endl;
 
-			std::cout << "Debug: This is a table in .rti format." << std::endl;
+			std::cout << "[Debug]: This is a table in .rti format." << std::endl;
 		}
 
 		static CMemoryPool mpIndex( bytesForChainWalkSet, debug, maxMem );
@@ -1197,7 +1007,7 @@ void CCrackEngine::SearchRainbowTable( std::string pathName, CHashSet& hs )
 		RTIrcrackiIndexChain *pIndex = (RTIrcrackiIndexChain*)mpIndex.Allocate( reader->getIndexFileSize(), nAllocatedSizeIndex );
 		if( debug )
 		{
-			std::cout << "Debug: Allocated " << nAllocatedSizeIndex << " bytes for index with filelen " << reader->getIndexFileSize() << std::endl;
+			std::cout << "[Debug]: Allocated " << nAllocatedSizeIndex << " bytes for index with filelen " << reader->getIndexFileSize() << std::endl;
 		}
 
 		static CMemoryPool mp( bytesForChainWalkSet + nAllocatedSizeIndex, debug, maxMem );
@@ -1214,7 +1024,8 @@ void CCrackEngine::SearchRainbowTable( std::string pathName, CHashSet& hs )
 			{
 				// Load index chunk
 				memset( pIndex, 0x00, nAllocatedSizeIndex );
-				std::cout << "reading index... ";
+				if ( debug )
+					std::cout << "[Debug]: reading index... ";
 
 				gettimeofday( &tv, NULL );
 				unsigned int nDataRead = fread( pIndex, 1, nAllocatedSizeIndex, reader->getIndexFileData() );
@@ -1222,8 +1033,11 @@ void CCrackEngine::SearchRainbowTable( std::string pathName, CHashSet& hs )
 				final = sub_timeofday( tv2, tv );
 
 				float fTime = 1.0f * final.tv_sec + 1.0f * final.tv_usec / 1000000;
-				std::cout << nDataRead << " bytes read, disk access time: "
-					<< fTime << " s" << std::endl;
+				if ( debug )
+				{
+					std::cout << "[Debug]: " << nDataRead << " bytes read, disk access time: "
+						<< fTime << " s" << std::endl;
+				}
 				m_fTotalDiskAccessTime += fTime;
 
 				int nIndexChainCountRead = nDataRead / sizeof( RTIrcrackiIndexChain );
@@ -1238,7 +1052,7 @@ void CCrackEngine::SearchRainbowTable( std::string pathName, CHashSet& hs )
 
 				if( debug )
 				{
-					std::cout << "Debug: Allocated " << nAllocatedSize << " for "
+					std::cout << "[Debug]: Allocated " << nAllocatedSize << " for "
 						<< nCoveredRainbowTableChains << " chains, filelen " 
 						<< reader->getDataFileSize() << std::endl;
 				}
@@ -1271,7 +1085,7 @@ void CCrackEngine::SearchRainbowTable( std::string pathName, CHashSet& hs )
 
 						if( debug && !fVerified )
 						{
-							std::cout << "Debug: verifying the file...";
+							std::cout << "[Debug]: Verifying the file...";
 
 							// Chain length test
 							unsigned int nIndexToVerify = nRainbowChainCountRead / 2;
@@ -1307,12 +1121,14 @@ void CCrackEngine::SearchRainbowTable( std::string pathName, CHashSet& hs )
 
 							if( cwc.GetIndex() != nEndPoint )
 							{
-								std::cout << "rainbow chain length verify fail" << std::endl;
+								if ( debug )
+									std::cout << "rainbow chain length verify fail" << std::endl;
 								break;
 							}
 
 							fVerified = true;
-							std::cout << "ok" << std::endl;
+							if ( debug )
+								std::cout << "ok" << std::endl;
 						}
 
 						// Search table chunk
@@ -1325,7 +1141,8 @@ void CCrackEngine::SearchRainbowTable( std::string pathName, CHashSet& hs )
 						final = sub_timeofday( tv2, tv );
 
 						fTime = 1.0f * final.tv_sec + 1.0f * final.tv_usec / 1000000;
-						std::cout << "cryptanalysis time: " << ( fTime + postTime - preTime ) << " s" << std::endl;
+						if ( debug )
+							std::cout << "[Debug]: cryptanalysis time: " << ( fTime + postTime - preTime ) << " s" << std::endl;
 						m_fTotalCryptanalysisTime += fTime;
 						nProcessedChains += nRainbowChainCountRead;
 
@@ -1334,8 +1151,10 @@ void CCrackEngine::SearchRainbowTable( std::string pathName, CHashSet& hs )
 							break;
 					}
 				}
-				else
-					std::cout << "memory allocation failed for rainbow table" << std::endl;
+				else if ( debug )
+				{
+					std::cout << "[Debug]: Memory allocation failed for rainbow table" << std::endl;
+				}
 			}
 		}
 
@@ -1354,10 +1173,10 @@ void CCrackEngine::SearchRainbowTable( std::string pathName, CHashSet& hs )
 
 		if (debug)
 		{
-			std::cout << "Debug: Saving " << bytesForChainWalkSet
+			std::cout << "[Debug]: Saving " << bytesForChainWalkSet
 				<< " bytes of memory for chainwalkset." << std::endl;
 
-			std::cout << "Debug: This is a table in .rti2 format." << std::endl;
+			std::cout << "[Debug]: This is a table in .rti2 format." << std::endl;
 		}
 
 		static CMemoryPool mp( bytesForChainWalkSet, debug, maxMem );
@@ -1366,7 +1185,7 @@ void CCrackEngine::SearchRainbowTable( std::string pathName, CHashSet& hs )
 
 		if( debug )
 		{
-			std::cout << "Debug: Allocate " << nAllocatedSize
+			std::cout << "[Debug]: Allocate " << nAllocatedSize
 				<< " bytes, filelen " << GetFileLen( pathName ) << std::endl;
 		}
 
@@ -1381,7 +1200,7 @@ void CCrackEngine::SearchRainbowTable( std::string pathName, CHashSet& hs )
 			{
 				// Load table chunk
 				if( debug )
-					std::cout << "Debug: reading..." << std::endl;
+					std::cout << "[Debug]: reading..." << std::endl;
 
 				gettimeofday( &tv, NULL );
 
@@ -1391,15 +1210,18 @@ void CCrackEngine::SearchRainbowTable( std::string pathName, CHashSet& hs )
 				final = sub_timeofday( tv2, tv );
 
 				float fTime = 1.0f * final.tv_sec + 1.0f * final.tv_usec / 1000000;
-				std::cout << (nChains * sizeOfChain )
-					<< " bytes read, disk access time: " << fTime << "s"
-					<< std::endl;
+				if ( debug )
+				{
+					std::cout << "[Debug]: " << (nChains * sizeOfChain )
+						<< " bytes read, disk access time: " << fTime << "s"
+						<< std::endl;
+				}
 				m_fTotalDiskAccessTime += fTime;
 
 				// Verify table chunk
 				if( debug && !fVerified )
 				{
-					std::cout << "Debug: verify the file..." << std::endl;
+					std::cout << "[Debug]: verify the file..." << std::endl;
 
 					// Chain length test
 					int nIndexToVerify = nChains / 2;
@@ -1416,7 +1238,10 @@ void CCrackEngine::SearchRainbowTable( std::string pathName, CHashSet& hs )
 
 					if( cwc.GetIndex() != pChain[nIndexToVerify].nIndexE )
 					{
-						std::cout << "rainbow chain length verify fail" << std::endl;
+						if ( debug )
+						{
+							std::cout << "[Debug]: Rainbow chain length verify fail" << std::endl;
+						}
 						break;
 					}
 
@@ -1431,7 +1256,10 @@ void CCrackEngine::SearchRainbowTable( std::string pathName, CHashSet& hs )
 					if( i != nChains - 1 )
 
 					{
-						std::cout << "this file is not sorted" << std::endl;
+						if ( debug )
+						{
+							std::cout << "[Debug]: This file is not sorted" << std::endl;
+						}
 						break;
 					}
 
@@ -1444,7 +1272,8 @@ void CCrackEngine::SearchRainbowTable( std::string pathName, CHashSet& hs )
 				gettimeofday( &tv2, NULL );
 				final = sub_timeofday( tv2, tv );
 				fTime = 1.0f * final.tv_sec + 1.0f * final.tv_usec / 1000000;
-				std::cout << "cryptanalysis time: " << fTime <<" s" << std::endl;
+				if ( debug )
+					std::cout << "[Debug]: cryptanalysis time: " << fTime <<" s" << std::endl;
 				m_fTotalCryptanalysisTime += fTime;
 
 				// Already finished?
@@ -1453,7 +1282,12 @@ void CCrackEngine::SearchRainbowTable( std::string pathName, CHashSet& hs )
 			}
 		}
 		else
-			std::cout << "memory allocation fail" << std::endl;
+		{
+			if ( debug )
+			{
+				std::cout << "[Debug]: memory allocation fail" << std::endl;
+			}
+		}
 
 		// XXX
 		// delete pChain;
@@ -1461,8 +1295,10 @@ void CCrackEngine::SearchRainbowTable( std::string pathName, CHashSet& hs )
 		if( reader != NULL )
 			delete reader;
 	}
-	else
-		std::cout << "Unsupported file format or corrupt table." << std::endl;
+	else if ( debug )
+	{
+		std::cout << "[Debug]: Unsupported file format or corrupt table." << std::endl;
+	}
 /*
 			if (debug)
 			printf("Debug: writing progress to %s\n", sProgressPathName.c_str());
@@ -1501,7 +1337,8 @@ void CCrackEngine::Run(std::vector<std::string> vPathName, CHashSet& hs, int i_m
 	for (i = 0; i < vPathName.size() && hs.AnyhashLeft(); i++)
 	{
 		SearchRainbowTable(vPathName[i], hs);
-		printf("\n");
+		if ( debug )
+			printf("\n");
 	}
 
 	// delete precalc files
