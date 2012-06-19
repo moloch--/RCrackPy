@@ -333,15 +333,6 @@ boost::python::dict singleHash(std::string sHash, std::string pathToTables,
 		std::string sPrecalcPathName, bool debug, bool keepPrecalcFiles,
 		int enableGPU, int maxThreads, uint64 maxMem)
 {
-	//std::string sIniPathName            = "rcracki_mt.ini";
-	//std::string sSessionPathName        = "rcracki.session";
-	//std::string sProgressPathName       = "rcracki.progress";
-	//std::string sPrecalcPathName        = "rcracki.precalc";
-	//bool debug                          = false;
-	//bool keepPrecalcFiles               = false;
-	//int enableGPU                       = 0;
-	//int maxThreads                      = 4;
-	//uint64 maxMem                       = 0;
 
 	CHashSet hashSet;
 	bool resumeSession = false; // Sessions not currently supported
@@ -417,7 +408,7 @@ BOOST_PYTHON_MODULE(RainbowCrack)
 			arg("maxThreads") = 1,
 			arg("maxMem") = 0
 		),
-		"singleHash is used to crack any single LM/NTLM/MD5 hash passed as an argument"
+		"single_hash(): Used to crack any single LM/NTLM/MD5 hash passed as an argument"
 	);
 	// def("text_file");
 	// def("cain_file");
