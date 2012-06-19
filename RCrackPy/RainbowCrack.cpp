@@ -382,6 +382,65 @@ boost::python::dict singleHash(std::string sHash, std::string pathToTables,
 	return results;
 }
 
+/* Cracks a single hash and returns a Python dictionary */
+boost::python::dict crack(unsigned int len, boost::python::list& ls, std::string pathToTables,
+		std::string outputFile, std::string sSessionPathName,
+		std::string sProgressPathName, std::string sPrecalcPathName,
+		bool debug, bool keepPrecalcFiles, int enableGPU, int maxThreads,
+		uint64 maxMem)
+{
+	CHashSet hashSet;
+	bool resumeSession = false; // Sessions not currently supported
+	std::vector<std::string> verifiedHashes;
+	std::vector<std::string> vPathName;
+	std::vector<std::string> hashes;
+
+	for (int index = 0; index < len; ++index) {
+		std::string sHash = boost::python::extract<std::string>(ls[index]);
+		if (NormalizeHash(sHash)) {
+			verifiedHashes.push_back(sHash);
+		} else {
+			std::ostringstream stringBuilder;
+			stringBuilder << "Invalid hash: " << sHash.c_str();
+			std::string message = stringBuilder.str();
+			PyErr_SetString(PyExc_ValueError, message.c_str());
+			throw boost::python::error_already_set();
+		}
+	}
+	for (unsigned int index = 0; index < verifiedHashes.size(); ++index) {
+		hashSet.AddHash(verifiedHashes[index]);
+	}
+
+	/* Load rainbow tables */
+	GetTableList(pathToTables, vPathName);
+	if ( debug )
+	{
+		std::cout << "[Debug]: Found " << vPathName.size() << " rainbowtable file(s)..." << std::endl;
+	}
+	/* Start cracking! */
+	CCrackEngine crackEngine;
+	crackEngine.setSession(sSessionPathName, sProgressPathName, sPrecalcPathName, keepPrecalcFiles);
+	crackEngine.Run(vPathName, hashSet, maxThreads, maxMem, resumeSession, debug, enableGPU);
+
+	/* Gather results */
+	boost::python::dict results;
+	for (uint32 i = 0; i < verifiedHashes.size(); i++)
+	{
+		std::string sPlain;
+		std::string sBinary;
+		std::string tmpHash = verifiedHashes[i];
+
+		if (!hashSet.GetPlain(tmpHash, sPlain, sBinary))
+		{
+			sPlain  = "<Not Found>";
+			sBinary = "<Not Found>";
+		}
+		results[verifiedHashes[i].c_str()] = sPlain.c_str();
+	}
+	return results;
+}
+
+
 /* Python constructor (required) */
 void rainbowCrackInit()
 {
@@ -395,7 +454,7 @@ BOOST_PYTHON_MODULE(RainbowCrack)
 	def("single_hash",
 		singleHash,
 		(
-			arg("sHash"),
+			arg("sHash"), // Hash to be cracked
 			arg("pathToTables"),
 			arg("outputFile") = "",
 			arg("sSessionPathName") = "rcracki.session",
@@ -408,6 +467,24 @@ BOOST_PYTHON_MODULE(RainbowCrack)
 			arg("maxMem") = 0
 		),
 		"single_hash(): Used to crack any single LM/NTLM/MD5 hash passed as an argument"
+	);
+	def("crack",
+		crack,
+		(
+			arg("len"), // Length of ls
+			arg("ls"), // Python list of hashes
+			arg("pathToTables"),
+			arg("outputFile") = "",
+			arg("sSessionPathName") = "rcracki.session",
+			arg("sProgressPathName") = "rcracki.progress",
+			arg("sPrecalcPathName") = "rcracki.precalc",
+			arg("debug") = false,
+			arg("keepPrecalcFiles") = false,
+			arg("enableGPU") = 0,
+			arg("maxThreads") = 1,
+			arg("maxMem") = 0
+		),
+		"crack(length, list): Used to crack a list of hashes"
 	);
 	// def("");
 	// def("cain_file");
