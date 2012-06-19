@@ -375,6 +375,7 @@ void CCrackEngine::SearchTableChunkOld(RainbowChainO* pChain, int nRainbowChainL
 			}
 		}
 		#else
+		/* Disable pausing
 		int c = tty_getchar();
 		if (c >= 0) {
 			tty_flush();
@@ -409,12 +410,13 @@ void CCrackEngine::SearchTableChunkOld(RainbowChainO* pChain, int nRainbowChainL
 				printf( "\nPress 'p' to pause...\n");
 			}
 		}
+		*/
 		#endif
 		unsigned char TargetHash[MAX_HASH_LEN];
 		int nHashLen;
 		ParseHash(vHash[nHashIndex], TargetHash, nHashLen);
 		if (nHashLen != CChainWalkContext::GetHashLen())
-			printf("Debug: nHashLen mismatch\n");
+			printf("[Debug]: nHashLen mismatch\n");
 
 		// Request ChainWalk
 		bool fNewlyGenerated;
@@ -457,7 +459,10 @@ void CCrackEngine::SearchTableChunkOld(RainbowChainO* pChain, int nRainbowChainL
 
 					if( returnValue != 0 )
 					{
-						printf("pThread creation failed, returnValue: %d\n", returnValue);
+						if ( debug )
+						{
+							printf("pThread creation failed, returnValue: %d\n", returnValue);
+						}
 					}
 					else
 					{
@@ -468,7 +473,10 @@ void CCrackEngine::SearchTableChunkOld(RainbowChainO* pChain, int nRainbowChainL
 				}
 				else
 				{
-					printf("r_Thread creation failed!\n");
+					if ( debug )
+					{
+						printf("r_Thread creation failed!\n");
+					}
 				}
 			}
 
@@ -480,7 +488,10 @@ void CCrackEngine::SearchTableChunkOld(RainbowChainO* pChain, int nRainbowChainL
 				int returnValue = pthread_join(pThread, NULL);
 				if( returnValue != 0 )
 				{
-					printf("pThread join failed, returnValue: %d\n", returnValue);
+					if ( debug )
+					{
+						printf("[Debug]: pThread join failed, returnValue: %d\n", returnValue);
+					}
 				}
 
 				rcrackiThread* rThread = threadPool[thread_ID];
@@ -497,10 +508,11 @@ void CCrackEngine::SearchTableChunkOld(RainbowChainO* pChain, int nRainbowChainL
 			m_fTotalPrecalculationTime += fTime;
 			m_fTotalCryptanalysisTime -= fTime;
 
-			printf("%-50s\r", "");
-
 			if ( debug )
-				printf("Debug: pre-calculation time: %.2f s\n", fTime);
+			{
+				printf("[Debug]: %-50s\r", "");
+				printf("[Debug]: pre-calculation time: %.2f s\n", fTime);
+			}
 		}
 
 		threadPool.clear();
@@ -573,20 +585,28 @@ void CCrackEngine::SearchTableChunkOld(RainbowChainO* pChain, int nRainbowChainL
 			int returnValue = pthread_join(pThread, NULL);
 			if( returnValue != 0 )
 			{
-				printf("pThread join failed, returnValue: %d\n", returnValue);
+				if ( debug )
+				{
+					printf("[Debug]: pThread join failed, returnValue: %d\n", returnValue);
+				}
 			}
 
 			nChainWalkStepDueToFalseAlarm += rThread->GetChainWalkStepDueToFalseAlarm();
 			nFalseAlarm += rThread->GetnFalseAlarm();
 
 			if (rThread->FoundHash() && !foundHashInThread) {
-				printf("%-50s\r", "");
-
-				printf("plaintext of %s is %s\n", rThread->GetHash().c_str(), rThread->GetPlain().c_str());
+				if ( debug )
+				{
+					printf("[Debug]: %-50s\r", "");
+					printf("[Debug]: Plain-text of %s is %s\n", rThread->GetHash().c_str(), rThread->GetPlain().c_str());
+				}
 				if (writeOutput)
 				{
 					if (!writeResultLineToFile(outputFile, rThread->GetHash(), rThread->GetPlain(), rThread->GetBinary()))
-						printf("Couldn't write this result to file!\n");
+						if ( debug )
+						{
+							printf("[Debug]: Couldn't write this result to file!\n");
+						}
 				}
 				hs.SetPlain(rThread->GetHash(), rThread->GetPlain(), rThread->GetBinary());
 
@@ -609,17 +629,19 @@ void CCrackEngine::SearchTableChunkOld(RainbowChainO* pChain, int nRainbowChainL
 		pThreads.clear();
 		threadPool.clear();
 	}
-
-	printf("%-50s\r", "");
+	if ( debug )
+	{
+		printf("[Debug]: %-50s\r", "");
+	}
 	pThreads.clear();
 	threadPool.clear();
 	pthread_attr_destroy(&attr);
 
 	if ( debug )
 	{
-		std::cout << "Debug: chain walk step: " << nChainWalkStep << std::endl;
-		std::cout << "Debug: false alarm: " << nFalseAlarm << std::endl;
-		std::cout << "Debug: chain walk step due to false alarm: "
+		std::cout << "[Debug]: Chain walk step: " << nChainWalkStep << std::endl;
+		std::cout << "[Debug]: False alarm: " << nFalseAlarm << std::endl;
+		std::cout << "[Debug]: Chain walk step due to false alarm: "
 			<< nChainWalkStepDueToFalseAlarm << std::endl;
 	}
 
@@ -632,9 +654,11 @@ void CCrackEngine::SearchTableChunk(RainbowChain* pChain, int nRainbowChainLen, 
 {
 	std::vector<std::string> vHash;
 	hs.GetLeftHashWithLen(vHash, CChainWalkContext::GetHashLen());
-	printf("searching for %lu hash%s...\n", (unsigned long)vHash.size(),
-										   vHash.size() > 1 ? "es" : "");
-
+	if ( debug )
+	{
+		printf("[Debug]: Searching for %lu hash%s...\n", (unsigned long)vHash.size(),
+											   vHash.size() > 1 ? "es" : "");
+	}
 	uint64 nChainWalkStep = 0;
 	int nFalseAlarm = 0;
 	int nChainWalkStepDueToFalseAlarm = 0;
@@ -716,7 +740,7 @@ void CCrackEngine::SearchTableChunk(RainbowChain* pChain, int nRainbowChainLen, 
 			tty_flush();
 			if (c==112) { // = p
 				pausing = true;
-				printf( "\nPausing, press 'p' again to continue... ");
+				//printf( "\nPausing, press 'p' again to continue... ");
 
 				timeval tv;
 				timeval tv2;
@@ -730,7 +754,7 @@ void CCrackEngine::SearchTableChunk(RainbowChain* pChain, int nRainbowChainLen, 
 						tty_flush();
 						if (c == 112)
 						{
-							printf( " [Continuing]\n");
+							//printf( " [Continuing]\n");
 							pausing = false;
 							gettimeofday( &tv2, NULL );
 							final = sub_timeofday( tv2, tv );
@@ -742,7 +766,7 @@ void CCrackEngine::SearchTableChunk(RainbowChain* pChain, int nRainbowChainLen, 
 				}
 			}
 			else {
-				printf( "\nPress 'p' to pause...\n");
+				//printf( "\nPress 'p' to pause...\n");
 			}
 		}
 		#endif
@@ -750,8 +774,9 @@ void CCrackEngine::SearchTableChunk(RainbowChain* pChain, int nRainbowChainLen, 
 		int nHashLen;
 		ParseHash(vHash[nHashIndex], TargetHash, nHashLen);
 		if (nHashLen != CChainWalkContext::GetHashLen())
-			printf("Debug: nHashLen mismatch\n");
-
+		{
+			printf("[Debug]: nHashLen mismatch\n");
+		}
 		// Request ChainWalk
 		bool fNewlyGenerated;
 		uint64* pStartPosIndexE = m_cws.RequestWalk(TargetHash,
@@ -775,9 +800,11 @@ void CCrackEngine::SearchTableChunk(RainbowChain* pChain, int nRainbowChainLen, 
 			timeval final;
 
 			gettimeofday( &tv, NULL );
-
-			printf("Pre-calculating hash %lu of %lu.%-20s\r",
-				(unsigned long)nHashIndex+1, (unsigned long)vHash.size(), "");
+			if ( debug )
+			{
+				printf("[Debug]: Pre-calculating hash %lu of %lu.%-20s\r",
+					(unsigned long)nHashIndex+1, (unsigned long)vHash.size(), "");
+			}
 			threadPool.clear();
 			pThreads.clear();
 
@@ -793,7 +820,10 @@ void CCrackEngine::SearchTableChunk(RainbowChain* pChain, int nRainbowChainLen, 
 
 					if( returnValue != 0 )
 					{
-						printf("pThread creation failed, returnValue: %d\n", returnValue);
+						if ( debug )
+						{
+							printf("[Debug]: pThread creation failed, returnValue: %d\n", returnValue);
+						}
 					}
 					else
 					{
@@ -804,7 +834,10 @@ void CCrackEngine::SearchTableChunk(RainbowChain* pChain, int nRainbowChainLen, 
 				}
 				else
 				{
-					printf("r_Thread creation failed!\n");
+					if ( debug )
+					{
+						printf("[Debug]: r_Thread creation failed!\n");
+					}
 				}
 			}
 
@@ -836,14 +869,16 @@ void CCrackEngine::SearchTableChunk(RainbowChain* pChain, int nRainbowChainLen, 
 			printf("%-50s\r", "");
 
 			if ( debug )
-				printf("Debug: pre-calculation time: %.2f s\n", fTime);
+				printf("[Debug]: pre-calculation time: %.2f s\n", fTime);
 		}
 
 		threadPool.clear();
 		pThreads.clear();
 
-		printf("Checking false alarms for hash %lu of %lu.%-20s\r",
-			(unsigned long)nHashIndex+1, (unsigned long)vHash.size(), "");
+		if (debug) {
+			printf("Checking false alarms for hash %lu of %lu.%-20s\r",
+				(unsigned long)nHashIndex+1, (unsigned long)vHash.size(), "");
+		}
 
 		int i;
 		for (i = 0; i < maxThreads; i++)
@@ -938,16 +973,19 @@ void CCrackEngine::SearchTableChunk(RainbowChain* pChain, int nRainbowChainLen, 
 		threadPool.clear();
 	}
 
-	printf("%-50s\r", "");
+	if ( debug )
+	{
+		printf("%-50s\r", "");
+	}
 	pThreads.clear();
 	threadPool.clear();
 	pthread_attr_destroy(&attr);
 
 	if ( debug )
 	{
-		std::cout << "Debug: chain walk step: " << nChainWalkStep << std::endl;
-		std::cout << "Debug: false alarm: " << nFalseAlarm << std::endl;
-		std::cout << "Debug: chain walk step due to false alarm: "
+		std::cout << "[Debug]: chain walk step: " << nChainWalkStep << std::endl;
+		std::cout << "[Debug]: false alarm: " << nFalseAlarm << std::endl;
+		std::cout << "[Debug]: chain walk step due to false alarm: "
 			<< nChainWalkStepDueToFalseAlarm << std::endl;
 	}
 
@@ -993,7 +1031,10 @@ void CCrackEngine::SearchRainbowTable( std::string pathName, CHashSet& hs )
 		sFileName = pathName;
 
 	// Info
-	std::cout << sFileName.c_str() << std::endl;
+	if ( debug )
+	{
+		std::cout << "[Debug]: " << sFileName.c_str() << std::endl;
+	}
 
 	// Setup
 	int nRainbowChainLen, nRainbowChainCount;
@@ -1003,8 +1044,11 @@ void CCrackEngine::SearchRainbowTable( std::string pathName, CHashSet& hs )
 	// Already finished?
 	if (!hs.AnyHashLeftWithLen(CChainWalkContext::GetHashLen()))
 	{
-		std::cout << "this table contains hashes with length "
-			<< CChainWalkContext::GetHashLen() << " only" << std::endl; 
+		if ( debug )
+		{
+			std::cout << "[Debug]: this table contains hashes with length "
+				<< CChainWalkContext::GetHashLen() << " only" << std::endl;
+		}
 		return;
 	}
 
@@ -1060,7 +1104,11 @@ void CCrackEngine::SearchRainbowTable( std::string pathName, CHashSet& hs )
 				final = sub_timeofday( tv2, tv );
 
 				float fTime = 1.0f * final.tv_sec + 1.0f * final.tv_usec / 1000000;
-				std::cout << (nChains * reader->getChainSize() ) << " bytes read, disk access time: " << fTime << "s" << std::endl;
+				if ( debug )
+				{
+					std::cout << "[Debug]: " << (nChains * reader->getChainSize() )
+							<< " bytes read, disk access time: " << fTime << "s" << std::endl;
+				}
 				m_fTotalDiskAccessTime += fTime;
 
 				// Verify table chunk
@@ -1432,7 +1480,6 @@ void CCrackEngine::SearchRainbowTable( std::string pathName, CHashSet& hs )
 
 void CCrackEngine::Run(std::vector<std::string> vPathName, CHashSet& hs, int i_maxThreads, uint64 i_maxMem, bool resume, bool bDebug, int gpu)
 {
-	std::cout << "[*] Engine started" << std::endl;
 	uint32 i;
 
 #ifndef _WIN32

@@ -327,620 +327,30 @@ bool LMPasswordCorrectCase( std::string sLMPassword, unsigned char* pNTLMHash, s
 	return fRet;
 }
 
-/* Main */
-int rcracki(int argc, char* argv[])
+boost::python::dict singleHash(std::string sHash, std::string pathToTables,
+		std::string outputFile, std::string sIniPathName,
+		std::string sSessionPathName, std::string sProgressPathName,
+		std::string sPrecalcPathName, bool debug, bool keepPrecalcFiles,
+		int enableGPU, int maxThreads, uint64 maxMem)
 {
-	std::vector<std::string> vPathName;
-	std::vector<std::string> vDefaultRainbowTablePath;
-	std::string sWildCharPathName		= "";
-	std::string sInputType				= "";
-	std::string sInput					= "";
-	std::string outputFile				= "";
-	std::string sApplicationPath		= "";
-	std::string sIniPathName			= "rcracki_mt.ini";
-	bool writeOutput					= false;
-	std::string sSessionPathName		= "rcracki.session";
-	std::string sProgressPathName		= "rcracki.progress";
-	std::string sPrecalcPathName		= "rcracki.precalc";
-	bool resumeSession					= false;
-	bool useDefaultRainbowTablePath		= false;
-	bool debug							= false;
-	bool keepPrecalcFiles				= false;
-	bool runSha1AgainstMysqlSha1 		= false;
-	int enableGPU						= 0;
-	std::string sAlgorithm				= "";
-	int maxThreads						= 1;
-	uint64 maxMem						= 0;
-	CHashSet hs;
+	//std::string sIniPathName            = "rcracki_mt.ini";
+	//std::string sSessionPathName        = "rcracki.session";
+	//std::string sProgressPathName       = "rcracki.progress";
+	//std::string sPrecalcPathName        = "rcracki.precalc";
+	//bool debug                          = false;
+	//bool keepPrecalcFiles               = false;
+	//int enableGPU                       = 0;
+	//int maxThreads                      = 4;
+	//uint64 maxMem                       = 0;
 
-	// Read defaults from ini file;
-	bool readFromIni = false;
-	std::vector<std::string> vLine;
-	if (ReadLinesFromFile(sIniPathName, vLine)) {
-		readFromIni = true;
-	}
-	else if (ReadLinesFromFile(GetApplicationPath() + sIniPathName, vLine)) {
-		readFromIni = true;
-	}
-	if (readFromIni)
-	{
-		uint32 i;
-		for (i = 0; i < vLine.size(); i++)
-		{
-			if (vLine[i].substr(0,1) != "#")
-			{
-				std::vector<std::string> vPart;
-				if (SeperateString(vLine[i], "=", vPart))
-				{
-					std::string sOption = vPart[0];
-					std::string sValue  = vPart[1];
-					
-					if (sOption == "Threads") {
-						maxThreads = atoi(sValue.c_str());
-					}
-					else if (sOption == "MaxMemoryUsage" ) {
-						maxMem = atoi(sValue.c_str()) * 1024 *1024;
-					}
-					else if (sOption == "DefaultResultsFile") {
-						outputFile = sValue;
-					}
-					else if (sOption == "AlwaysStoreResultsToFile") {
-						if (sValue == "1")
-							writeOutput = true;
-					}
-					else if (sOption.substr(0,24) == "DefaultRainbowTablePath.") {
-						//printf("Default RT path: %s\n", sValue.c_str());
-						vDefaultRainbowTablePath.push_back(vLine[i]);
-					}
-					else if (sOption == "DefaultAlgorithm") {
-						useDefaultRainbowTablePath = true;
-						sAlgorithm = sValue;
-					}
-					else if (sOption == "AlwaysDebug") {
-						if (sValue == "1")
-							debug = true;
-					}
-					else if (sOption == "EnableGPU") {
-						if (sValue == "1")
-							enableGPU = 1;
-					}
-					else if (sOption == "AlwaysKeepPrecalcFiles") {
-						if (sValue == "1")
-							keepPrecalcFiles = true;
-					}
-					else {
-						std::cout << "illegal option " << sOption.c_str()
-							<< " in ini file " << sIniPathName.c_str() << std::endl;
-						return 0;
-					}
-				}
-			}
-		}
-		if (writeOutput && outputFile == "")
-		{
-			std::cout << "You need to specify a 'DefaultResultsFile' "
-				<< "with 'AlwaysStoreResultsToFile=1'" << std::endl;
-			writeOutput = false;
-		}
-	}
-
-	// Parse command line arguments
-	int i;
-	for (i = 1; i < argc; i++)
-	{
-		std::string cla = argv[i];
-		if (cla == "-h") {
-			sInputType = cla;
-			i++;
-			if (i < argc)
-				sInput = argv[i];
-		}
-		else if (cla == "-l") {
-			sInputType = cla;
-			i++;
-			if (i < argc)
-				sInput = argv[i];
-		}
-		else if (cla == "-f") {
-			sInputType = cla;
-			i++;
-			if (i < argc)
-				sInput = argv[i];
-		}
-		else if (cla == "-c") {
-			sInputType = cla;
-			i++;
-			if (i < argc)
-				sInput = argv[i];
-		}
-		else if (cla == "-t") {
-			i++;
-			if (i < argc)
-				maxThreads = atoi(argv[i]);
-		}
-		else if ( cla == "-d" ) {
-			runSha1AgainstMysqlSha1 = true;
-		}
-		else if ( cla == "-m" ) {
-			i++;
-			if ( i < argc )
-				maxMem = atoi(argv[i]) * 1024 * 1024;
-		}
-		else if (cla == "-o") {
-			writeOutput = true;
-			i++;
-			if (i < argc)
-				outputFile = argv[i];
-		}
-		else if (cla == "-r") {
-			resumeSession = true;
-		}
-		else if (cla == "-s") {
-			i++;
-			if (i < argc)
-			{
-				sSessionPathName		=  argv[i];
-				sSessionPathName		+= ".session";
-				sProgressPathName		=  argv[i];
-				sProgressPathName		+= ".progress";
-				sPrecalcPathName		=  argv[i];
-				sPrecalcPathName		+= ".precalc";
-			}
-		}
-		else if (cla == "-v") {
-			debug = true;
-		}
-		else if (cla == "-g") {
-			enableGPU = 1;
-		}
-		else if (cla == "-k") {
-			keepPrecalcFiles = true;
-		}
-		else if (cla == "-a") {
-			useDefaultRainbowTablePath = true;
-			i++;
-			if (i < argc)
-				sAlgorithm = argv[i];
-		}
-		else {
-			GetTableList(cla, vPathName);
-		}
-	}
-
-	//if (debug && !readFromIni)
-		//std::cout << "Debug: Couldn't read rcracki_mt.ini, continuing anyway." << std::endl;
-
-	// Load session data if we are resuming
-	/*
-	if (resumeSession)
-	{
-		vPathName.clear();
-		std::vector<std::string> sSessionData;
-		if (ReadLinesFromFile(sSessionPathName.c_str(), sSessionData))
-		{
-			uint32 i;
-			for (i = 0; i < sSessionData.size(); i++)
-			{
-				std::vector<std::string> vPart;
-				if (SeperateString(sSessionData[i], "=", vPart))
-				{
-					std::string sOption = vPart[0];
-					std::string sValue  = vPart[1];
-					
-					if (sOption == "sPathName") {
-						vPathName.push_back(sValue);
-					}
-					else if (sOption == "sInputType") {
-						sInputType = sValue;
-					}
-					else if (sOption == "sInput") {
-						sInput = sValue;
-					}
-					else if (sOption == "outputFile") {
-						writeOutput = true;
-						outputFile = sValue;
-					}
-					else if (sOption == "keepPrecalcFiles") {
-						if (sValue == "1")
-							keepPrecalcFiles = true;
-					}
-				}
-			}
-		}
-		else {
-			std::cout << "Couldn't open session file " << sSessionPathName.c_str()
-				<< std::endl;
-			return 0;
-		}
-	}
-	*/
-
-	if (maxThreads < 1)
-		maxThreads = 1;
-
-	// don't load these if we are resuming a session that already has a list of tables
-	if (useDefaultRainbowTablePath && !resumeSession)
-	{
-		uint32 i;
-		for (i = 0; i < vDefaultRainbowTablePath.size(); i++)
-		{
-			std::vector<std::string> vPart;
-			if (SeperateString(vDefaultRainbowTablePath[i], ".=", vPart))
-			{
-				std::string lineAlgorithm = vPart[1];
-				std::string linePath = vPart[2];
-
-				if (lineAlgorithm == sAlgorithm)
-					GetTableList(linePath, vPathName);
-			}
-		}
-	}
-
-	//std::cout << "Using " << maxThreads << " threads for pre-calculation "
-	//	<< "and false alarm checking..." << std::endl;
-
-	setvbuf(stdout, NULL, _IONBF,0);
-	if (vPathName.size() == 0)
-	{
-		std::cout << "no rainbow table found" << std::endl;
-		return 0;
-	}
-
-	std::cout << "Found " << vPathName.size() << " rainbowtable files..."
-		<< std::endl << std::endl;
-
-	bool fCrackerType;			// true: hash cracker, false: lm cracker
-	std::vector<std::string> vHash;		// hash cracker
-	std::vector<std::string> vUserName;	// lm cracker
-	std::vector<std::string> vLMHash;	// lm cracker
-	std::vector<std::string> vNTLMHash;	// lm cracker
-	if (sInputType == "-h")
-	{
-		fCrackerType = true;
-
-		std::string sHash = sInput;
-		if (NormalizeHash(sHash))
-			vHash.push_back(sHash);
-		else
-			std::cout << "invalid hash: " << sHash.c_str() << std::endl;
-	}
-	else if (sInputType == "-l")
-	{
-		fCrackerType = true;
-
-		std::string sPathName = sInput;
-		std::vector<std::string> vLine;
-		if (ReadLinesFromFile(sPathName, vLine))
-		{
-			uint32 i;
-			for (i = 0; i < vLine.size(); i++)
-			{
-				std::string sHash = vLine[i];
-				if (NormalizeHash(sHash))
-					vHash.push_back(sHash);
-				else
-					std::cout << "invalid hash: " << sHash.c_str() << std::endl;
-			}
-		}
-		else
-			std::cout << "can't open " << sPathName.c_str() << std::endl;
-	}
-	else if (sInputType == "-f")
-	{
-		fCrackerType = false;
-
-		std::string sPathName = sInput;
-		LoadLMHashFromPwdumpFile(sPathName, vUserName, vLMHash, vNTLMHash);
-	}
-	else if (sInputType == "-c")
-	{
-		// 2009-01-04 - james.dickson - Added this for cain-files.
-		fCrackerType = false;
-		std::string sPathName = sInput;
-		LoadLMHashFromCainLSTFile(sPathName, vUserName, vLMHash, vNTLMHash);
-	}
-	else
-	{
-
-		return 0;
-	}
-
-	if (fCrackerType && vHash.size() == 0)
-	{
-		std::cout << "no hashes found";
-		return 0;
-	}
-	if (!fCrackerType && vLMHash.size() == 0)
-	{
-		std::cout << "no hashes found";
-		return 0;
-	}
-	
-	std::vector<std::string> sha1AsMysqlSha1;
-
-	if (fCrackerType)
-	{
-		uint32 i;
-		for (i = 0; i < vHash.size(); i++)
-		{
-			if ( runSha1AgainstMysqlSha1 )
-			{
-				HASHROUTINE hashRoutine;
-				CHashRoutine hr;
-				std::string hashName = "sha1";
-				int hashLen = 20;
-				hr.GetHashRoutine( hashName, hashRoutine, hashLen );
-				unsigned char* plain = new unsigned char[hashLen*2];
-				memcpy( plain, HexToBinary(vHash[i].c_str(), hashLen*2 ).c_str(), hashLen );
-				unsigned char hash_output[MAX_HASH_LEN];
-				hashRoutine( plain, hashLen, hash_output);
-				sha1AsMysqlSha1.push_back(HexToStr(hash_output, hashLen));
-				hs.AddHash( sha1AsMysqlSha1[i] );
-			}
-			else
-				hs.AddHash(vHash[i]);
-		}
-	}
-	else
-	{
-		uint32 i;
-		for (i = 0; i < vLMHash.size(); i++)
-		{
-			hs.AddHash(vLMHash[i].substr(0, 16));
-			hs.AddHash(vLMHash[i].substr(16, 16));
-		}
-	}
-
-	// Load found hashes from session file
-//	if (resumeSession)
-//	{
-//		std::vector<std::string> sSessionData;
-//		if (ReadLinesFromFile(sSessionPathName.c_str(), sSessionData))
-//		{
-//			uint32 i;
-//			for (i = 0; i < sSessionData.size(); i++)
-//			{
-//				std::vector<std::string> vPart;
-//				if (SeperateString(sSessionData[i], "=", vPart))
-//				{
-//					std::string sOption = vPart[0];
-//					std::string sValue  = vPart[1];
-//
-//					if (sOption == "sHash") {
-//						std::vector<std::string> vPartHash;
-//						if (SeperateString(sValue, "::", vPartHash))
-//						{
-//							std::string sHash = vPartHash[0];
-//							std::string sBinary = vPartHash[1];
-//							std::string sPlain = vPartHash[2];
-//
-//							hs.SetPlain(sHash, sPlain, sBinary);
-//						}
-//					}
-//				}
-//			}
-//		}
-//	}
-//	else
-//	{
-//		FILE* file;
-//
-//		std::string buffer = "";
-//
-//		// (Over)write session data if we are not resuming
-//		if ( ( file = fopen( sSessionPathName.c_str(), "w" ) ) != NULL )
-//		{
-//			buffer += "sInputType=" + sInputType + "\n";
-//			buffer += "sInput=" + sInput + "\n";
-//
-//			uint32 i;
-//			for (i = 0; i < vPathName.size(); i++)
-//			{
-//				buffer += "sPathName=" + vPathName[i] + "\n";
-//			}
-//
-//			if (writeOutput)
-//				buffer += "outputFile=" + outputFile + "\n";
-//
-//			if (keepPrecalcFiles)
-//				buffer += "keepPrecalcFiles=1\n";
-//
-//			fputs (buffer.c_str(), file);
-//			fclose (file);
-//		}
-//		else
-//		{
-//			std::cout << "Error opening file " << sSessionPathName.c_str()
-//				<< ". Check that you have write permission to the directory "
-//				<< "that the application is run. Exiting Application."
-//				<< std::endl;
-//			return  -1;
-//		}
-//
-//		if( (file = fopen( sProgressPathName.c_str(), "w" )) == NULL )
-//		{
-//			std::cout << "Error opening file " << sProgressPathName.c_str()
-//				<< ". Check that you have write permission to the directory "
-//				<< "that the application is run. Exiting Application."
-//				<< std::endl;
-//			return  -1;
-//		}
-//		else
-//			fclose( file );
-//	}
-
-	// Run
-	CCrackEngine ce;
-	if (writeOutput)
-		ce.setOutputFile(outputFile);
-	ce.setSession(sSessionPathName, sProgressPathName, sPrecalcPathName, keepPrecalcFiles);
-	ce.Run(vPathName, hs, maxThreads, maxMem, resumeSession, debug, enableGPU);
-
-	// Remove session files
-	//if (debug)
-	//	std::cout << "Debug: Removing session files." << std::endl;
-
-	if (remove(sSessionPathName.c_str()) == 0)
-		remove(sProgressPathName.c_str());
-	else
-	{
-		if (debug)
-			std::cout << "Debug: Failed removing session files." << std::endl;
-	}
-
-	// Statistics
-	std::cout << "statistics" << std::endl
-		<< "-------------------------------------------------------" << std::endl
-		<< "plaintext found:                          " << hs.GetStatHashFound()
-		<< " of " << hs.GetStatHashTotal()
-		<< "(" << 100.0f * hs.GetStatHashFound() / hs.GetStatHashTotal() << "%)"
-		<< std::endl << "total disk access time:                   "
-		<< ce.GetStatTotalDiskAccessTime() << "s" << std::endl
-		<< "total cryptanalysis time:                 "
-		<< ce.GetStatTotalCryptanalysisTime() << "s" << std::endl
-		<< "total pre-calculation time:               "
-		<< ce.GetStatTotalPrecalculationTime() << "s" << std::endl
-		<< "total chain walk step:                    "
-		<< ce.GetStatTotalChainWalkStep() << std::endl
-		<< "total false alarm:                        "
-		<< ce.GetStatTotalFalseAlarm() << std::endl
-		<< "total chain walk step due to false alarm: "
-		<< ce.GetStatTotalChainWalkStepDueToFalseAlarm() << std::endl
-		//<< "total chain walk step skipped due to checkpoints: " << ce.GetStatTotalFalseAlarmSkipped(); // Checkpoints not used - yet
-		<< std::endl;
-
-	// Result
-	std::cout << "result" << std::endl
-		<< "-------------------------------------------------------" << std::endl;
-
-	if (fCrackerType)
-	{
-		uint32 i;
-		for (i = 0; i < vHash.size(); i++)
-		{
-			std::string sPlain, sBinary;
-			std::string tmpHash = vHash[i];
-
-			if ( runSha1AgainstMysqlSha1 )
-			{
-				tmpHash = sha1AsMysqlSha1[i];
-			}
-
-			if (!hs.GetPlain(tmpHash, sPlain, sBinary))
-			{
-				sPlain  = "<notfound>";
-				sBinary = "<notfound>";
-			}
-
-			std::cout << vHash[i].c_str() << "\t" << sPlain.c_str() <<"\thex:"
-				<< sBinary.c_str() << std::endl;
-		}
-	}
-	else
-	{
-		uint32 i;
-		for (i = 0; i < vLMHash.size(); i++)
-		{
-			std::string sPlain1, sBinary1;
-			bool fPart1Found = hs.GetPlain(vLMHash[i].substr(0, 16), sPlain1, sBinary1);
-			if (!fPart1Found)
-			{
-				sPlain1  = "<notfound>";
-				sBinary1 = "<notfound>";
-			}
-
-			std::string sPlain2, sBinary2;
-			bool fPart2Found = hs.GetPlain(vLMHash[i].substr(16, 16), sPlain2, sBinary2);
-			if (!fPart2Found)
-			{
-				sPlain2  = "<notfound>";
-				sBinary2 = "<notfound>";
-			}
-
-			std::string sPlain = sPlain1 + sPlain2;
-			std::string sBinary = sBinary1 + sBinary2;
-
-			// Correct case
-			if (fPart1Found && fPart2Found)
-			{
-				unsigned char NTLMHash[16];
-				int nHashLen;
-				ParseHash(vNTLMHash[i], NTLMHash, nHashLen);
-				if (nHashLen != 16)
-					std::cout << "debug: nHashLen mismatch" << std::endl;
-				std::string sNTLMPassword;
-				if (LMPasswordCorrectCase(sPlain, NTLMHash, sNTLMPassword))
-				{
-					sPlain = sNTLMPassword;
-					sBinary = HexToStr((const unsigned char*)sNTLMPassword.c_str(), sNTLMPassword.size());
-					if (writeOutput)
-					{
-						if (!writeResultLineToFile(outputFile, vNTLMHash[i].c_str(), sPlain.c_str(), sBinary.c_str()))
-							std::cout << "Couldn't write final result to file!"
-								<< std::endl;
-					}
-				}
-				else
-				{
-					std::cout << vUserName[i].c_str() << "\t" << sPlain.c_str()
-						<< "\thex:" << sBinary.c_str() << std::endl
-						<< "Failed case correction, trying unicode correction for: "
-						<< sPlain.c_str() << std::endl;
-
-					LM2NTLMcorrector corrector;
-					if (corrector.LMPasswordCorrectUnicode(sBinary, NTLMHash, sNTLMPassword))
-					{
-						sPlain = sNTLMPassword;
-						sBinary = corrector.getBinary();
-						if (writeOutput)
-						{
-							if (!writeResultLineToFile(outputFile, vNTLMHash[i].c_str(), sPlain.c_str(), sBinary.c_str()))
-								std::cout << "Couldn't write final result to file!"
-									<< std::endl;
-						}
-					}
-					else
-					{
-						std::cout << "unicode correction for password "
-							<< sPlain.c_str() << " failed!" << std::endl;
-					}
-				}
-			}
-
-			std::cout << vUserName[i].c_str() << "\t" << sPlain.c_str()
-				<< "\thex:" << sBinary.c_str() << std::endl;
-		}
-	}
-
-	return 0;
-}
-
-boost::python::dict singleHash(std::string sHash, std::string pathToTables)
-{
-	std::vector<std::string> vPathName;
-	std::vector<std::string> vDefaultRainbowTablePath;
-	std::string sWildCharPathName       = "";
-	std::string sInputType              = "";
-	std::string outputFile              = "";
-	std::string sApplicationPath        = "";
-	std::string sIniPathName            = "rcracki_mt.ini";
-	std::string sSessionPathName        = "rcracki.session";
-	std::string sProgressPathName       = "rcracki.progress";
-	std::string sPrecalcPathName        = "rcracki.precalc";
-	bool resumeSession                  = false;
-	bool debug                          = true;
-	bool keepPrecalcFiles               = false;
-	bool runSha1AgainstMysqlSha1        = false;
-	int enableGPU                       = 0;
-	std::string sAlgorithm              = "MD5";
-	int maxThreads                      = 4;
-	uint64 maxMem                       = 0;
 	CHashSet hashSet;
-	std::vector<std::string> vHash;
+	bool resumeSession = false; // Sessions not currently supported
+	std::vector<std::string> verifiedHashes;
+	std::vector<std::string> vPathName;
 
 	/* Setup hashes */
 	if (NormalizeHash(sHash)) {
-		vHash.push_back(sHash);
+		verifiedHashes.push_back(sHash);
 	} else {
 		std::ostringstream stringBuilder;
 		stringBuilder << "Invalid hash: " << sHash.c_str();
@@ -948,14 +358,16 @@ boost::python::dict singleHash(std::string sHash, std::string pathToTables)
         PyErr_SetString(PyExc_ValueError, message.c_str());
         throw boost::python::error_already_set();
 	}
-	for (int index = 0; index < vHash.size(); ++index) {
-		hashSet.AddHash(vHash[index]);
+	for (unsigned int index = 0; index < verifiedHashes.size(); ++index) {
+		hashSet.AddHash(verifiedHashes[index]);
 	}
 
 	/* Load rainbow tables */
 	GetTableList(pathToTables, vPathName);
-	std::cout << "[*] Found " << vPathName.size() << " rainbowtable file(s)..." << std::endl;
-
+	if ( debug )
+	{
+		std::cout << "[Debug]: Found " << vPathName.size() << " rainbowtable file(s)..." << std::endl;
+	}
 	/* Start cracking! */
 	CCrackEngine crackEngine;
 	crackEngine.setSession(sSessionPathName, sProgressPathName, sPrecalcPathName, keepPrecalcFiles);
@@ -963,18 +375,18 @@ boost::python::dict singleHash(std::string sHash, std::string pathToTables)
 
 	/* Gather results */
 	boost::python::dict results;
-	for (uint32 i = 0; i < vHash.size(); i++)
+	for (uint32 i = 0; i < verifiedHashes.size(); i++)
 	{
 		std::string sPlain;
 		std::string sBinary;
-		std::string tmpHash = vHash[i];
+		std::string tmpHash = verifiedHashes[i];
 
 		if (!hashSet.GetPlain(tmpHash, sPlain, sBinary))
 		{
 			sPlain  = "<Not Found>";
 			sBinary = "<Not Found>";
 		}
-		results[vHash[i].c_str()] = sPlain.c_str();
+		results[verifiedHashes[i].c_str()] = sPlain.c_str();
 	}
 	return results;
 }
@@ -989,6 +401,26 @@ BOOST_PYTHON_MODULE(RainbowCrack)
 {
 	using namespace boost::python;
 	def("RainbowCrack", rainbowCrackInit);
-	def("single_hash", singleHash);
+	def("single_hash",
+		singleHash,
+		(
+			arg("sHash"),
+			arg("pathToTables"),
+			arg("outputFile") = "",
+			arg("sIniPathName") = "rcracki_mt.ini",
+			arg("sSessionPathName") = "rcracki.session",
+			arg("sProgressPathName") = "rcracki.progress",
+			arg("sPrecalcPathName") = "rcracki.precalc",
+			arg("debug") = false,
+			arg("keepPrecalcFiles") = false,
+			arg("enableGPU") = 0,
+			arg("maxThreads") = 1,
+			arg("maxMem") = 0
+		),
+		"singleHash is used to crack any single LM/NTLM/MD5 hash passed as an argument"
+	);
+	// def("text_file");
+	// def("cain_file");
+	// def("pwdump_file");
 }
 
