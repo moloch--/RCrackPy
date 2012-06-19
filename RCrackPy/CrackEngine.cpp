@@ -27,6 +27,7 @@
  * along with rcracki_mt.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <iostream>
 #include "CrackEngine.h"
 #include "RTReader.h"
 #include "RTIReader.h"
@@ -1431,6 +1432,7 @@ void CCrackEngine::SearchRainbowTable( std::string pathName, CHashSet& hs )
 
 void CCrackEngine::Run(std::vector<std::string> vPathName, CHashSet& hs, int i_maxThreads, uint64 i_maxMem, bool resume, bool bDebug, int gpu)
 {
+	std::cout << "[*] Engine started" << std::endl;
 	uint32 i;
 
 #ifndef _WIN32
