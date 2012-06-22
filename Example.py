@@ -19,9 +19,11 @@ md5_hashes = [
 md5_hash = "af5b3d17aa1e2ff2a0f83142d692d701"
 
 print "[*] Cracking a list of hashes, please wait..."
+# crack(LengthOfList, List, PathToTables)
 results = RainbowCrack.crack(len(md5_hashes), md5_hashes, tables, maxThreads = 4)
 print "Got:", results
 
 print "[*] Cracking single hash, please wait..."
+# crack(StrHash, PathToTables)
 result = RainbowCrack.single_hash(md5_hash, tables, maxThreads = 4)
 print "Got:", result

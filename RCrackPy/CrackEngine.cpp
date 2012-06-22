@@ -47,11 +47,13 @@ CCrackEngine::CCrackEngine()
 
 	sSessionPathName = "";
 	sProgressPathName = "";
+	/* This fixes problems with threading and Python's GIL */
 	m_thread_state = PyEval_SaveThread();
 }
 
 CCrackEngine::~CCrackEngine()
 {
+	/* This fixes problems with threading and Python's GIL */
 	PyEval_RestoreThread(m_thread_state);
 	m_thread_state = NULL;
 }

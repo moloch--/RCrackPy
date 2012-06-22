@@ -41,7 +41,6 @@
 #include <boost/python.hpp>
 
 #include "Public.h"
-
 #include "CrackEngine.h"
 #include "lm2ntlm.h"
 
@@ -180,7 +179,6 @@ bool NormalizeHash(std::string& sHash)
 		|| sNormalizedHash.size() < MIN_HASH_LEN * 2
 		|| sNormalizedHash.size() > MAX_HASH_LEN * 2)
 		return false;
-
 	// Make lower
 	uint32 i;
 	for (i = 0; i < sNormalizedHash.size(); i++)
@@ -188,7 +186,6 @@ bool NormalizeHash(std::string& sHash)
 		if (sNormalizedHash[i] >= 'A' && sNormalizedHash[i] <= 'F')
 			sNormalizedHash[i] = (char) sNormalizedHash[i] - 'A' + 'a';
 	}
-
 	// Character check
 	for (i = 0; i < sNormalizedHash.size(); i++)
 	{
@@ -196,7 +193,6 @@ bool NormalizeHash(std::string& sHash)
 			&& (sNormalizedHash[i] < '0' || sNormalizedHash[i] > '9'))
 			return false;
 	}
-
 	sHash = sNormalizedHash;
 	return true;
 }
@@ -225,14 +221,25 @@ void LoadLMHashFromPwdumpFile( std::string sPathName, std::vector<std::string>& 
 						vNTLMHash.push_back(sNTLMHash);
 					}
 					else
-						std::cout << "invalid lm/ntlm hash " << sLMHash.c_str()
-							<< ":" << sNTLMHash.c_str() << std::endl;
+					{
+						std::ostringstream stringBuilder;
+						stringBuilder << "Invalid lm/ntlm hash " << sLMHash.c_str();
+						std::string message = stringBuilder.str();
+				        PyErr_SetString(PyExc_ValueError, message.c_str());
+				        throw boost::python::error_already_set();
+					}
 				}
 			}
 		}
 	}
 	else
-		std::cout << "can't open " << sPathName.c_str() << std::endl;
+	{
+		std::ostringstream stringBuilder;
+		stringBuilder << "Can't open " << sPathName.c_str();
+		std::string message = stringBuilder.str();
+        PyErr_SetString(PyExc_ValueError, message.c_str());
+        throw boost::python::error_already_set();
+	}
 }
 
 // 2009-01-04 - james.dickson - Added this so we can load hashes from cain .LST files.
@@ -241,11 +248,11 @@ void LoadLMHashFromCainLSTFile( std::string sPathName, std::vector<std::string>&
 	std::vector<std::string> vLine;
 	if (ReadLinesFromFile(sPathName, vLine))
 	{
-		uint32 i;
-		for (i = 0; i < vLine.size(); i++)
+		uint32 index;
+		for (index = 0; index < vLine.size(); index++)
 		{
 			std::vector<std::string> vPart;
-			if (SeperateString(vLine[i], "\t\t\t\t\t\t", vPart))
+			if (SeperateString(vLine[index], "\t\t\t\t\t\t", vPart))
 			{
 				std::string sUserName = vPart[0];
 				std::string sLMHash   = vPart[4];
@@ -260,14 +267,25 @@ void LoadLMHashFromCainLSTFile( std::string sPathName, std::vector<std::string>&
 						vNTLMHash.push_back(sNTLMHash);
 					}
 					else
-						std::cout << "invalid lm/ntlm hash " << sLMHash.c_str()
-							<< ":" << sNTLMHash.c_str() << std::endl;
+					{
+						std::ostringstream stringBuilder;
+						stringBuilder << "Invalid lm/ntlm hash " << sLMHash.c_str();
+						std::string message = stringBuilder.str();
+				        PyErr_SetString(PyExc_ValueError, message.c_str());
+				        throw boost::python::error_already_set();
+					}
 				}
 			}
 		}
 	}
 	else
-		std::cout << "can't open " << sPathName.c_str() << std::endl;
+	{
+		std::ostringstream stringBuilder;
+		stringBuilder << "Can't open " << sPathName.c_str();
+		std::string message = stringBuilder.str();
+        PyErr_SetString(PyExc_ValueError, message.c_str());
+        throw boost::python::error_already_set();
+	}
 }
 
 bool NTLMPasswordSeek(unsigned char* pLMPassword, int nLMPasswordLen, int nLMPasswordNext,
@@ -277,19 +295,16 @@ bool NTLMPasswordSeek(unsigned char* pLMPassword, int nLMPasswordLen, int nLMPas
 	{
 		unsigned char md[MD4_DIGEST_LENGTH];
 		MD4_NEW(pLMPassword, nLMPasswordLen * 2, md);
-
 		if (memcmp(md, pNTLMHash, MD4_DIGEST_LENGTH) == 0)
 		{
 			sNTLMPassword = "";
-			int i;
-			for (i = 0; i < nLMPasswordLen; i++)
-				sNTLMPassword += char(pLMPassword[i * 2]);
+			for (int index = 0; index < nLMPasswordLen; index++)
+				sNTLMPassword += char(pLMPassword[index * 2]);
 			return true;
 		}
 		else
 			return false;
 	}
-
 	if (NTLMPasswordSeek(pLMPassword, nLMPasswordLen, nLMPasswordNext + 1, pNTLMHash, sNTLMPassword))
 		return true;
 
@@ -312,19 +327,109 @@ bool LMPasswordCorrectCase( std::string sLMPassword, unsigned char* pNTLMHash, s
 		sNTLMPassword = "";
 		return true;
 	}
-
 	unsigned char* pLMPassword = new unsigned char[sLMPassword.size() * 2];
-	uint32 i;
-	for (i = 0; i < sLMPassword.size(); i++)
+	for (uint32 index = 0; index < sLMPassword.size(); index++)
 	{
-		pLMPassword[i * 2    ] = sLMPassword[i];
-		pLMPassword[i * 2 + 1] = 0x00;
+		pLMPassword[index * 2    ] = sLMPassword[index];
+		pLMPassword[index * 2 + 1] = 0x00;
 	}
 	bool fRet = NTLMPasswordSeek(pLMPassword, sLMPassword.size(), 0, pNTLMHash, sNTLMPassword);
-
 	delete pLMPassword;
-
 	return fRet;
+}
+
+/* Gathers results and returns a Python dictionary */
+boost::python::dict fCrackerResults(std::vector<std::string> verifiedHashes, CHashSet hashSet)
+{
+    /* Gather results */
+    boost::python::dict results;
+	for (uint32 index = 0; index < verifiedHashes.size(); index++) {
+		std::string sPlain;
+		std::string sBinary;
+		std::string tmpHash = verifiedHashes[index];
+
+		if (!hashSet.GetPlain(tmpHash, sPlain, sBinary)) {
+			sPlain = "<Not Found>";
+			sBinary = "<Not Found>";
+		}
+		results[verifiedHashes[index].c_str()] = sPlain.c_str();
+	}
+    return results;
+}
+
+boost::python::dict otherResults(std::vector<std::string> verifiedHashes, CHashSet hashSet)
+{
+	uint32 i;
+	for (i = 0; i < vLMHash.size(); i++) {
+		std::string sPlain1, sBinary1;
+		bool fPart1Found = hs.GetPlain(vLMHash[i].substr(0, 16), sPlain1,
+				sBinary1);
+		if (!fPart1Found) {
+			sPlain1 = "<Not Found>";
+			sBinary1 = "<Not Found>";
+		}
+
+		std::string sPlain2, sBinary2;
+		bool fPart2Found = hs.GetPlain(vLMHash[i].substr(16, 16), sPlain2,
+				sBinary2);
+		if (!fPart2Found) {
+			sPlain2 = "<Not Found>";
+			sBinary2 = "<Not Found>";
+		}
+
+		std::string sPlain = sPlain1 + sPlain2;
+		std::string sBinary = sBinary1 + sBinary2;
+
+		// Correct case
+		if (fPart1Found && fPart2Found) {
+			unsigned char NTLMHash[16];
+			int nHashLen;
+			ParseHash(vNTLMHash[i], NTLMHash, nHashLen);
+			if (nHashLen != 16)
+				std::cout << "[Debug]: nHashLen mismatch" << std::endl;
+			std::string sNTLMPassword;
+			if (LMPasswordCorrectCase(sPlain, NTLMHash, sNTLMPassword)) {
+				sPlain = sNTLMPassword;
+				sBinary = HexToStr(
+						(const unsigned char*) sNTLMPassword.c_str(),
+						sNTLMPassword.size());
+				if (writeOutput) {
+					if (!writeResultLineToFile(outputFile,
+							vNTLMHash[i].c_str(), sPlain.c_str(),
+							sBinary.c_str()))
+					{
+						std::cout << "Couldn't write final result to file!"
+								<< std::endl;
+					}
+				}
+			} else {
+				std::cout << vUserName[i].c_str() << "\t" << sPlain.c_str()
+						<< "\thex:" << sBinary.c_str() << std::endl
+						<< "Failed case correction, trying unicode correction for: "
+						<< sPlain.c_str() << std::endl;
+				LM2NTLMcorrector corrector;
+				if (corrector.LMPasswordCorrectUnicode(sBinary, NTLMHash,
+						sNTLMPassword)) {
+					sPlain = sNTLMPassword;
+					sBinary = corrector.getBinary();
+					if (writeOutput) {
+						if (!writeResultLineToFile(outputFile,
+								vNTLMHash[i].c_str(), sPlain.c_str(),
+								sBinary.c_str()))
+							std::cout << "Couldn't write final result to file!"
+									<< std::endl;
+					}
+				} else {
+					std::cout << "unicode correction for password "
+							<< sPlain.c_str() << " failed!" << std::endl;
+				}
+			}
+		}
+
+		std::cout << vUserName[i].c_str() << "\t" << sPlain.c_str() << "\thex:"
+				<< sBinary.c_str() << std::endl;
+	}
+
 }
 
 /* Cracks a single hash and returns a Python dictionary */
@@ -352,33 +457,18 @@ boost::python::dict singleHash(std::string sHash, std::string pathToTables,
 	for (unsigned int index = 0; index < verifiedHashes.size(); ++index) {
 		hashSet.AddHash(verifiedHashes[index]);
 	}
-
 	/* Load rainbow tables */
 	GetTableList(pathToTables, vPathName);
 	if ( debug )
 	{
-		std::cout << "[Debug]: Found " << vPathName.size() << " rainbowtable file(s)..." << std::endl;
+		std::cout << "[Debug]: Found " << vPathName.size() << " rainbow table file(s)..." << std::endl;
 	}
 	/* Start cracking! */
 	CCrackEngine crackEngine;
 	crackEngine.setSession(sSessionPathName, sProgressPathName, sPrecalcPathName, keepPrecalcFiles);
 	crackEngine.Run(vPathName, hashSet, maxThreads, maxMem, resumeSession, debug, enableGPU);
-
 	/* Gather results */
-	boost::python::dict results;
-	for (uint32 i = 0; i < verifiedHashes.size(); i++)
-	{
-		std::string sPlain;
-		std::string sBinary;
-		std::string tmpHash = verifiedHashes[i];
-
-		if (!hashSet.GetPlain(tmpHash, sPlain, sBinary))
-		{
-			sPlain  = "<Not Found>";
-			sBinary = "<Not Found>";
-		}
-		results[verifiedHashes[i].c_str()] = sPlain.c_str();
-	}
+	boost::python::dict results = fCrackerResults(verifiedHashes, hashSet);
 	return results;
 }
 
@@ -413,6 +503,76 @@ boost::python::dict crack(unsigned int len, boost::python::list& ls, std::string
 
 	/* Load rainbow tables */
 	GetTableList(pathToTables, vPathName);
+	if (debug)
+	{
+		std::cout << "[Debug]: Found " << vPathName.size() << " rainbow table file(s)..." << std::endl;
+	}
+	/* Start cracking! */
+	CCrackEngine crackEngine;
+	crackEngine.setSession(sSessionPathName, sProgressPathName, sPrecalcPathName, keepPrecalcFiles);
+	crackEngine.Run(vPathName, hashSet, maxThreads, maxMem, resumeSession, debug, enableGPU);
+    boost::python::dict results = fCrackerResults(verifiedHashes, hashSet);
+    return results;
+}
+
+/* Crack a PWDUMP file */
+boost::python::dict pwdump(std::string pwdumpFilePath, std::string pathToTables,
+		std::string outputFile, std::string sSessionPathName,
+		std::string sProgressPathName, std::string sPrecalcPathName,
+		bool debug, bool keepPrecalcFiles, int enableGPU, int maxThreads,
+		uint64 maxMem)
+{
+	std::vector<std::string> vHash;		// hash cracker
+	std::vector<std::string> vUserName;	// lm cracker
+	std::vector<std::string> vLMHash;	// lm cracker
+	std::vector<std::string> vNTLMHash;	// lm cracker
+	std::vector<std::string> vPathName;
+	bool resumeSession = false; // Sessions not currently supported
+	CHashSet hashSet;
+	/* Parse file for hashes */
+	LoadLMHashFromPwdumpFile(pwdumpFilePath, vUserName, vLMHash, vNTLMHash);
+	for (uint32 index = 0; index < vLMHash.size(); index++)
+	{
+		hashSet.AddHash(vLMHash[index].substr(0, 16));
+		hashSet.AddHash(vLMHash[index].substr(16, 16));
+	}
+	/* Load rainbow tables */
+	GetTableList(pathToTables, vPathName);
+	if ( debug )
+	{
+		std::cout << "[Debug]: Found " << vPathName.size() << " rainbow table file(s)..." << std::endl;
+	}
+	/* Start cracking! */
+	CCrackEngine crackEngine;
+	crackEngine.setSession(sSessionPathName, sProgressPathName, sPrecalcPathName, keepPrecalcFiles);
+	crackEngine.Run(vPathName, hashSet, maxThreads, maxMem, resumeSession, debug, enableGPU);
+    // boost::python::dict results = Results(verifiedHashes, hashSet);
+    return results;
+}
+
+/* Crack a Cain & Abel file */
+boost::python::dict cain(std::string cainFilePath, std::string pathToTables,
+		std::string outputFile, std::string sSessionPathName,
+		std::string sProgressPathName, std::string sPrecalcPathName,
+		bool debug, bool keepPrecalcFiles, int enableGPU, int maxThreads,
+		uint64 maxMem)
+{
+	std::vector<std::string> vHash;		// hash cracker
+	std::vector<std::string> vUserName;	// lm cracker
+	std::vector<std::string> vLMHash;	// lm cracker
+	std::vector<std::string> vNTLMHash;	// lm cracker
+	std::vector<std::string> vPathName;
+	bool resumeSession = false; // Sessions not currently supported
+	CHashSet hashSet;
+	/* Parse file for hashes */
+	LoadLMHashFromCainLSTFile(cainFilePath, vUserName, vLMHash, vNTLMHash);
+	for (uint32 index = 0; index < vLMHash.size(); index++)
+	{
+		hashSet.AddHash(vLMHash[index].substr(0, 16));
+		hashSet.AddHash(vLMHash[index].substr(16, 16));
+	}
+	/* Load rainbow tables */
+	GetTableList(pathToTables, vPathName);
 	if ( debug )
 	{
 		std::cout << "[Debug]: Found " << vPathName.size() << " rainbowtable file(s)..." << std::endl;
@@ -421,25 +581,9 @@ boost::python::dict crack(unsigned int len, boost::python::list& ls, std::string
 	CCrackEngine crackEngine;
 	crackEngine.setSession(sSessionPathName, sProgressPathName, sPrecalcPathName, keepPrecalcFiles);
 	crackEngine.Run(vPathName, hashSet, maxThreads, maxMem, resumeSession, debug, enableGPU);
-
-	/* Gather results */
-	boost::python::dict results;
-	for (uint32 i = 0; i < verifiedHashes.size(); i++)
-	{
-		std::string sPlain;
-		std::string sBinary;
-		std::string tmpHash = verifiedHashes[i];
-
-		if (!hashSet.GetPlain(tmpHash, sPlain, sBinary))
-		{
-			sPlain  = "<Not Found>";
-			sBinary = "<Not Found>";
-		}
-		results[verifiedHashes[i].c_str()] = sPlain.c_str();
-	}
-	return results;
+    // boost::python::dict results = fCrackerResults(verifiedHashes, hashSet);
+    return results;
 }
-
 
 /* Python constructor (required) */
 void rainbowCrackInit()
@@ -447,11 +591,12 @@ void rainbowCrackInit()
 	NULL; // Do nothing
 }
 
+/* Python module definitions */
 BOOST_PYTHON_MODULE(RainbowCrack)
 {
 	using namespace boost::python;
 	def("RainbowCrack", rainbowCrackInit);
-	def("single_hash",
+	def("hash",
 		singleHash,
 		(
 			arg("sHash"), // Hash to be cracked
@@ -468,7 +613,7 @@ BOOST_PYTHON_MODULE(RainbowCrack)
 		),
 		"single_hash(): Used to crack any single LM/NTLM/MD5 hash passed as an argument"
 	);
-	def("crack",
+	def("hash_list",
 		crack,
 		(
 			arg("len"), // Length of ls
@@ -486,8 +631,37 @@ BOOST_PYTHON_MODULE(RainbowCrack)
 		),
 		"crack(length, list): Used to crack a list of hashes"
 	);
-	// def("");
-	// def("cain_file");
-	// def("pwdump_file");
+	def("pwdump",
+		pwdump,
+		(
+			arg("pwdumpFilePath"),
+			arg("pathToTables"),
+			arg("outputFile") = "",
+			arg("sSessionPathName") = "rcracki.session",
+			arg("sProgressPathName") = "rcracki.progress",
+			arg("sPrecalcPathName") = "rcracki.precalc",
+			arg("debug") = false,
+			arg("keepPrecalcFiles") = false,
+			arg("enableGPU") = 0,
+			arg("maxThreads") = 1,
+			arg("maxMem") = 0
+		)
+	);
+	def("cain",
+		cain,
+		(
+			arg("cainFilePath"),
+			arg("pathToTables"),
+			arg("outputFile") = "",
+			arg("sSessionPathName") = "rcracki.session",
+			arg("sProgressPathName") = "rcracki.progress",
+			arg("sPrecalcPathName") = "rcracki.precalc",
+			arg("debug") = false,
+			arg("keepPrecalcFiles") = false,
+			arg("enableGPU") = 0,
+			arg("maxThreads") = 1,
+			arg("maxMem") = 0
+		)
+	);
 }
 
