@@ -321,14 +321,14 @@ void HashMSCACHE(unsigned char *pPlain, int nPlainLen, unsigned char* pHash)
 	MD4_Update(&ctx,(unsigned char*) unicode_user,userlen*2);
 	MD4_Final(pHash,&ctx);
 
-	/*
+
 	unsigned char unicode_pwd[256];
 	for (int i=0; i<nPlainLen; i++)
 	{
 		unicode_pwd[i*2] = pPlain[i];
 		unicode_pwd[i*2+1] = 0x00;
-	}*/
-	/*
+	}
+
 	unsigned char *buf = (unsigned char*)calloc(MSCACHE_HASH_SIZE + nSaltLength, sizeof(unsigned char));	
 	HashNTLM(pPlain, nPlainLen, buf, NULL);
 	//MD4(unicode_pwd, nPlainLen*2, buf);

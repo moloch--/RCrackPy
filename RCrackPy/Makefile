@@ -30,7 +30,7 @@ CC = g++
 #  add -mtune=native to OPTIMIZATION for better performance (if it works)
 OPTIMIZATION = -O3
 INCLUDES = -I.
-CFLAGS = -Wall -ansi $(INCLUDES) $(OPTIMIZATION) -c $(DEBUG) -fPIC
+CFLAGS = -Wall -ansi $(INCLUDES) $(OPTIMIZATION) -c $(DEBUG) -fPIC -Wunused-result
 LFLAGS = -Wall -ansi -filt $(INCLUDES) $(OPTIMIZATION) $(DEBUG)
 LIBS = -L/lib -L/usr/lib -lcrypto -lpthread
 OBJS = BaseRTReader.o ChainWalkContext.o ChainWalkSet.o CrackEngine.o \
@@ -49,10 +49,14 @@ OSNAME = $(shell uname -s)
 # Oh lets just forget this until we have autoconf
 #STRIP = $(shell which strip) -S
 
+#####################
 # Python version
+#####################
 PYTHON = /usr/include/python2.7
 
+################################
 # Boost libs (for Python build)
+################################
 BOOST_INC = /usr/include
 BOOST_LIB = /usr/lib
 
@@ -126,7 +130,7 @@ gprofall: rcracki_mt
 
 install:
 	install -d $(BIN)
-	install --group=root --owner=root --mode=755 rcracki_mt $(BIN)
+	install --group=root --owner=root --mode=755 RainbowCrack.so $(BIN)
 
 release: clean
 	mkdir $(RELEASE_DIR)

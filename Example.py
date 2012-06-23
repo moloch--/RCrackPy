@@ -9,6 +9,7 @@ onto the PYTHONPATH or in the cwd
 
 import RainbowCrack # RainbowCrack.so
 
+# MD5 Rainbow Tables Directory
 tables = "/media/data/RainbowTables/MD5/"
 
 md5_hashes = [
@@ -18,6 +19,7 @@ md5_hashes = [
 	]
 md5_hash = "af5b3d17aa1e2ff2a0f83142d692d701"
 
+RainbowCrack.version()
 print "[*] Cracking a list of hashes, please wait..."
 # crack(LengthOfList, List, PathToTables)
 results = RainbowCrack.crack(len(md5_hashes), md5_hashes, tables, maxThreads = 4)

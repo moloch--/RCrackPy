@@ -357,11 +357,12 @@ boost::python::dict fCrackerResults(std::vector<std::string> verifiedHashes, CHa
     return results;
 }
 
-boost::python::dict otherResults(std::vector<std::string> vLMHash,
-		std::vector<std::string> vNTLMHash, std::vector<std::string> vUserName,
-		CHashSet hashSet, std::string outputFile, bool writeOutput, bool debug)
+boost::python::dict otherResults(std::vector<std::string>& vLMHash,
+		std::vector<std::string>& vNTLMHash, std::vector<std::string>& vUserName,
+		CHashSet& hashSet, std::string& outputFile, bool debug)
 {
 	boost::python::dict results;
+	bool writeOutput = (outputFile == "" ? true:false);
 	for (uint32 index = 0; index < vLMHash.size(); index++) {
 		std::string sPlain1, sBinary1;
 		bool fPart1Found = hashSet.GetPlain(vLMHash[index].substr(0, 16), sPlain1, sBinary1);
@@ -400,9 +401,7 @@ boost::python::dict otherResults(std::vector<std::string> vLMHash,
 							vNTLMHash[index].c_str(), sPlain.c_str(),
 							sBinary.c_str()))
 					{
-						std::ostringstream stringBuilder;
-						stringBuilder << "Couldn't write final result to file!";
-						std::string message = stringBuilder.str();
+						std::string message = "Couldn't write final result to file!";
 				        PyErr_SetString(PyExc_IOError, message.c_str());
 				        throw boost::python::error_already_set();
 					}
@@ -426,9 +425,7 @@ boost::python::dict otherResults(std::vector<std::string> vLMHash,
 						if (!writeResultLineToFile(outputFile, vNTLMHash[index].c_str(), sPlain.c_str(),
 								sBinary.c_str()))
 						{
-							std::ostringstream stringBuilder;
-							stringBuilder << "Couldn't write final result to file!";
-							std::string message = stringBuilder.str();
+							std::string message = "Couldn't write final result to file!";
 					        PyErr_SetString(PyExc_IOError, message.c_str());
 					        throw boost::python::error_already_set();
 						}
@@ -451,7 +448,7 @@ boost::python::dict otherResults(std::vector<std::string> vLMHash,
 boost::python::dict hash(std::string sHash, std::string pathToTables,
 		std::string outputFile, std::string sSessionPathName,
 		std::string sProgressPathName, std::string sPrecalcPathName,
-		bool debug, bool keepPrecalcFiles, int enableGPU, int maxThreads,
+		bool debug, bool keepPrecalcFiles, int enableGPU, unsigned int maxThreads,
 		uint64 maxMem)
 {
 	CHashSet hashSet;
@@ -494,7 +491,7 @@ boost::python::dict hash(std::string sHash, std::string pathToTables,
 boost::python::dict hashList(unsigned int len, boost::python::list& ls, std::string pathToTables,
 		std::string outputFile, std::string sSessionPathName,
 		std::string sProgressPathName, std::string sPrecalcPathName,
-		bool debug, bool keepPrecalcFiles, int enableGPU, int maxThreads,
+		bool debug, bool keepPrecalcFiles, int enableGPU, unsigned int maxThreads,
 		uint64 maxMem)
 {
 	CHashSet hashSet;
@@ -539,7 +536,7 @@ boost::python::dict hashList(unsigned int len, boost::python::list& ls, std::str
 boost::python::dict pwdump(std::string pwdumpFilePath, std::string pathToTables,
 		std::string outputFile, std::string sSessionPathName,
 		std::string sProgressPathName, std::string sPrecalcPathName,
-		bool debug, bool keepPrecalcFiles, int enableGPU, int maxThreads,
+		bool debug, bool keepPrecalcFiles, int enableGPU, unsigned int maxThreads,
 		uint64 maxMem)
 {
 	std::vector<std::string> vHash;		// hash cracker
@@ -566,8 +563,7 @@ boost::python::dict pwdump(std::string pwdumpFilePath, std::string pathToTables,
 	CCrackEngine crackEngine;
 	crackEngine.setSession(sSessionPathName, sProgressPathName, sPrecalcPathName, keepPrecalcFiles);
 	crackEngine.Run(vPathName, hashSet, maxThreads, maxMem, resumeSession, debug, enableGPU);
-	bool writeFile = (outputFile == "" ? true:false);
-    boost::python::dict results = otherResults(vLMHash, vNTLMHash, vUserName, hashSet, outputFile, writeFile, debug);
+    boost::python::dict results = otherResults(vLMHash, vNTLMHash, vUserName, hashSet, outputFile, debug);
     return results;
 }
 
@@ -575,7 +571,7 @@ boost::python::dict pwdump(std::string pwdumpFilePath, std::string pathToTables,
 boost::python::dict cain(std::string cainFilePath, std::string pathToTables,
 		std::string outputFile, std::string sSessionPathName,
 		std::string sProgressPathName, std::string sPrecalcPathName,
-		bool debug, bool keepPrecalcFiles, int enableGPU, int maxThreads,
+		bool debug, bool keepPrecalcFiles, int enableGPU, unsigned int maxThreads,
 		uint64 maxMem)
 {
 	std::vector<std::string> vHash;		// hash cracker
@@ -602,8 +598,7 @@ boost::python::dict cain(std::string cainFilePath, std::string pathToTables,
 	CCrackEngine crackEngine;
 	crackEngine.setSession(sSessionPathName, sProgressPathName, sPrecalcPathName, keepPrecalcFiles);
 	crackEngine.Run(vPathName, hashSet, maxThreads, maxMem, resumeSession, debug, enableGPU);
-	bool writeFile = (outputFile == "" ? true:false);
-    boost::python::dict results = otherResults(vLMHash, vNTLMHash, vUserName, hashSet, outputFile, writeFile, debug);
+    boost::python::dict results = otherResults(vLMHash, vNTLMHash, vUserName, hashSet, outputFile, debug);
     return results;
 }
 
@@ -613,11 +608,18 @@ void rainbowCrackInit()
 	NULL; // Do nothing
 }
 
+/* Python module version info */
+void version() {
+	printf("RCrackPy v0.1 - RCrackI 0.7.0 Beta - Compiled on %s at %s\n", __DATE__, __TIME__);
+}
+
 /* Python module definitions */
 BOOST_PYTHON_MODULE(RainbowCrack)
 {
 	using namespace boost::python;
+	const unsigned int THREADS = 1;
 	def("RainbowCrack", rainbowCrackInit);
+	def("version", version);
 	def("hash",
 		hash,
 		(
@@ -630,7 +632,7 @@ BOOST_PYTHON_MODULE(RainbowCrack)
 			arg("debug") = false,
 			arg("keepPrecalcFiles") = false,
 			arg("enableGPU") = 0,
-			arg("maxThreads") = 1,
+			arg("maxThreads") = THREADS,
 			arg("maxMem") = 0
 		),
 		"single_hash(): Used to crack any single LM/NTLM/MD5 hash passed as an argument"
@@ -648,7 +650,7 @@ BOOST_PYTHON_MODULE(RainbowCrack)
 			arg("debug") = false,
 			arg("keepPrecalcFiles") = false,
 			arg("enableGPU") = 0,
-			arg("maxThreads") = 1,
+			arg("maxThreads") = THREADS,
 			arg("maxMem") = 0
 		),
 		"crack(length, list): Used to crack a list of hashes"
@@ -665,7 +667,7 @@ BOOST_PYTHON_MODULE(RainbowCrack)
 			arg("debug") = false,
 			arg("keepPrecalcFiles") = false,
 			arg("enableGPU") = 0,
-			arg("maxThreads") = 1,
+			arg("maxThreads") = THREADS,
 			arg("maxMem") = 0
 		)
 	);
@@ -681,7 +683,7 @@ BOOST_PYTHON_MODULE(RainbowCrack)
 			arg("debug") = false,
 			arg("keepPrecalcFiles") = false,
 			arg("enableGPU") = 0,
-			arg("maxThreads") = 1,
+			arg("maxThreads") = THREADS,
 			arg("maxMem") = 0
 		)
 	);
