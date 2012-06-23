@@ -6,6 +6,7 @@
 *.progress
 *.precalc
 rcracki.*
+.pydevproject
 
 # Compiled Object files
 *.slo

@@ -143,7 +143,7 @@ void GetTableList( std::string sWildCharPathName, std::vector<std::string>& vPat
 		}
 		else if (S_ISREG(buf.st_mode))
 		{
-			if (sWildCharPathName.size()>3)
+			if (sWildCharPathName.size() > 3)
 			{
 				if (sWildCharPathName.substr(sWildCharPathName.size()-3, 3) == ".rt")
 				{
@@ -159,7 +159,7 @@ void GetTableList( std::string sWildCharPathName, std::vector<std::string>& vPat
 					//printf("sPathName_sub: %s\n", sPathName_sub.c_str());
 				}
 			}
-			if ( sWildCharPathName.size() > 5 )
+			if (sWildCharPathName.size() > 5)
 			{
 				if ( sWildCharPathName.substr( sWildCharPathName.size() - 5, 5 ) == ".rti2" )
 				{
@@ -283,7 +283,7 @@ void LoadLMHashFromCainLSTFile( std::string sPathName, std::vector<std::string>&
 		std::ostringstream stringBuilder;
 		stringBuilder << "Can't open " << sPathName.c_str();
 		std::string message = stringBuilder.str();
-        PyErr_SetString(PyExc_ValueError, message.c_str());
+        PyErr_SetString(PyExc_IOError, message.c_str());
         throw boost::python::error_already_set();
 	}
 }
@@ -357,34 +357,35 @@ boost::python::dict fCrackerResults(std::vector<std::string> verifiedHashes, CHa
     return results;
 }
 
-boost::python::dict otherResults(std::vector<std::string> verifiedHashes, CHashSet hashSet)
+boost::python::dict otherResults(std::vector<std::string> vLMHash,
+		std::vector<std::string> vNTLMHash, std::vector<std::string> vUserName,
+		CHashSet hashSet, std::string outputFile, bool writeOutput, bool debug)
 {
-	uint32 i;
-	for (i = 0; i < vLMHash.size(); i++) {
+	boost::python::dict results;
+	for (uint32 index = 0; index < vLMHash.size(); index++) {
 		std::string sPlain1, sBinary1;
-		bool fPart1Found = hs.GetPlain(vLMHash[i].substr(0, 16), sPlain1,
-				sBinary1);
-		if (!fPart1Found) {
+		bool fPart1Found = hashSet.GetPlain(vLMHash[index].substr(0, 16), sPlain1, sBinary1);
+		if (!fPart1Found)
+		{
 			sPlain1 = "<Not Found>";
 			sBinary1 = "<Not Found>";
 		}
-
 		std::string sPlain2, sBinary2;
-		bool fPart2Found = hs.GetPlain(vLMHash[i].substr(16, 16), sPlain2,
+		bool fPart2Found = hashSet.GetPlain(vLMHash[index].substr(16, 16), sPlain2,
 				sBinary2);
-		if (!fPart2Found) {
+		if (!fPart2Found)
+		{
 			sPlain2 = "<Not Found>";
 			sBinary2 = "<Not Found>";
 		}
-
 		std::string sPlain = sPlain1 + sPlain2;
 		std::string sBinary = sBinary1 + sBinary2;
-
 		// Correct case
-		if (fPart1Found && fPart2Found) {
+		if (fPart1Found && fPart2Found)
+		{
 			unsigned char NTLMHash[16];
 			int nHashLen;
-			ParseHash(vNTLMHash[i], NTLMHash, nHashLen);
+			ParseHash(vNTLMHash[index], NTLMHash, nHashLen);
 			if (nHashLen != 16)
 				std::cout << "[Debug]: nHashLen mismatch" << std::endl;
 			std::string sNTLMPassword;
@@ -393,47 +394,61 @@ boost::python::dict otherResults(std::vector<std::string> verifiedHashes, CHashS
 				sBinary = HexToStr(
 						(const unsigned char*) sNTLMPassword.c_str(),
 						sNTLMPassword.size());
-				if (writeOutput) {
+				if (writeOutput)
+				{
 					if (!writeResultLineToFile(outputFile,
-							vNTLMHash[i].c_str(), sPlain.c_str(),
+							vNTLMHash[index].c_str(), sPlain.c_str(),
 							sBinary.c_str()))
 					{
-						std::cout << "Couldn't write final result to file!"
-								<< std::endl;
+						std::ostringstream stringBuilder;
+						stringBuilder << "Couldn't write final result to file!";
+						std::string message = stringBuilder.str();
+				        PyErr_SetString(PyExc_IOError, message.c_str());
+				        throw boost::python::error_already_set();
 					}
 				}
-			} else {
-				std::cout << vUserName[i].c_str() << "\t" << sPlain.c_str()
-						<< "\thex:" << sBinary.c_str() << std::endl
-						<< "Failed case correction, trying unicode correction for: "
-						<< sPlain.c_str() << std::endl;
+			}
+			else
+			{
+				if ( debug )
+				{
+					std::cout << "[Debug]: " << vUserName[index].c_str() << "\t" << sPlain.c_str()
+							<< "\thex:" << sBinary.c_str() << std::endl
+							<< "[Debug]: Failed case correction, trying unicode correction for: "
+							<< sPlain.c_str() << std::endl;
+				}
 				LM2NTLMcorrector corrector;
-				if (corrector.LMPasswordCorrectUnicode(sBinary, NTLMHash,
-						sNTLMPassword)) {
+				if (corrector.LMPasswordCorrectUnicode(sBinary, NTLMHash, sNTLMPassword)) {
 					sPlain = sNTLMPassword;
 					sBinary = corrector.getBinary();
-					if (writeOutput) {
-						if (!writeResultLineToFile(outputFile,
-								vNTLMHash[i].c_str(), sPlain.c_str(),
+					if (writeOutput)
+					{
+						if (!writeResultLineToFile(outputFile, vNTLMHash[index].c_str(), sPlain.c_str(),
 								sBinary.c_str()))
-							std::cout << "Couldn't write final result to file!"
-									<< std::endl;
+						{
+							std::ostringstream stringBuilder;
+							stringBuilder << "Couldn't write final result to file!";
+							std::string message = stringBuilder.str();
+					        PyErr_SetString(PyExc_IOError, message.c_str());
+					        throw boost::python::error_already_set();
+						}
 					}
-				} else {
-					std::cout << "unicode correction for password "
+				}
+				else if ( debug )
+				{
+					std::cout << "[Debug]: unicode correction for password "
 							<< sPlain.c_str() << " failed!" << std::endl;
+
 				}
 			}
 		}
-
-		std::cout << vUserName[i].c_str() << "\t" << sPlain.c_str() << "\thex:"
-				<< sBinary.c_str() << std::endl;
+		results[vUserName[index].c_str()] = sPlain.c_str();
 	}
-
+	return results;
 }
 
 /* Cracks a single hash and returns a Python dictionary */
-boost::python::dict singleHash(std::string sHash, std::string pathToTables,
+boost::python::dict hash(std::string sHash, std::string pathToTables,
 		std::string outputFile, std::string sSessionPathName,
 		std::string sProgressPathName, std::string sPrecalcPathName,
 		bool debug, bool keepPrecalcFiles, int enableGPU, int maxThreads,
@@ -443,18 +458,21 @@ boost::python::dict singleHash(std::string sHash, std::string pathToTables,
 	bool resumeSession = false; // Sessions not currently supported
 	std::vector<std::string> verifiedHashes;
 	std::vector<std::string> vPathName;
-
 	/* Setup hashes */
-	if (NormalizeHash(sHash)) {
+	if (NormalizeHash(sHash))
+	{
 		verifiedHashes.push_back(sHash);
-	} else {
+	}
+	else
+	{
 		std::ostringstream stringBuilder;
 		stringBuilder << "Invalid hash: " << sHash.c_str();
 		std::string message = stringBuilder.str();
         PyErr_SetString(PyExc_ValueError, message.c_str());
         throw boost::python::error_already_set();
 	}
-	for (unsigned int index = 0; index < verifiedHashes.size(); ++index) {
+	for (unsigned int index = 0; index < verifiedHashes.size(); ++index)
+	{
 		hashSet.AddHash(verifiedHashes[index]);
 	}
 	/* Load rainbow tables */
@@ -473,7 +491,7 @@ boost::python::dict singleHash(std::string sHash, std::string pathToTables,
 }
 
 /* Cracks a single hash and returns a Python dictionary */
-boost::python::dict crack(unsigned int len, boost::python::list& ls, std::string pathToTables,
+boost::python::dict hashList(unsigned int len, boost::python::list& ls, std::string pathToTables,
 		std::string outputFile, std::string sSessionPathName,
 		std::string sProgressPathName, std::string sPrecalcPathName,
 		bool debug, bool keepPrecalcFiles, int enableGPU, int maxThreads,
@@ -484,12 +502,14 @@ boost::python::dict crack(unsigned int len, boost::python::list& ls, std::string
 	std::vector<std::string> verifiedHashes;
 	std::vector<std::string> vPathName;
 	std::vector<std::string> hashes;
-
-	for (int index = 0; index < len; ++index) {
+	for (unsigned int index = 0; index < len; ++index) {
 		std::string sHash = boost::python::extract<std::string>(ls[index]);
-		if (NormalizeHash(sHash)) {
+		if (NormalizeHash(sHash))
+		{
 			verifiedHashes.push_back(sHash);
-		} else {
+		}
+		else
+		{
 			std::ostringstream stringBuilder;
 			stringBuilder << "Invalid hash: " << sHash.c_str();
 			std::string message = stringBuilder.str();
@@ -497,10 +517,10 @@ boost::python::dict crack(unsigned int len, boost::python::list& ls, std::string
 			throw boost::python::error_already_set();
 		}
 	}
-	for (unsigned int index = 0; index < verifiedHashes.size(); ++index) {
+	for (unsigned int index = 0; index < verifiedHashes.size(); ++index)
+	{
 		hashSet.AddHash(verifiedHashes[index]);
 	}
-
 	/* Load rainbow tables */
 	GetTableList(pathToTables, vPathName);
 	if (debug)
@@ -546,7 +566,8 @@ boost::python::dict pwdump(std::string pwdumpFilePath, std::string pathToTables,
 	CCrackEngine crackEngine;
 	crackEngine.setSession(sSessionPathName, sProgressPathName, sPrecalcPathName, keepPrecalcFiles);
 	crackEngine.Run(vPathName, hashSet, maxThreads, maxMem, resumeSession, debug, enableGPU);
-    // boost::python::dict results = Results(verifiedHashes, hashSet);
+	bool writeFile = (outputFile == "" ? true:false);
+    boost::python::dict results = otherResults(vLMHash, vNTLMHash, vUserName, hashSet, outputFile, writeFile, debug);
     return results;
 }
 
@@ -575,13 +596,14 @@ boost::python::dict cain(std::string cainFilePath, std::string pathToTables,
 	GetTableList(pathToTables, vPathName);
 	if ( debug )
 	{
-		std::cout << "[Debug]: Found " << vPathName.size() << " rainbowtable file(s)..." << std::endl;
+		std::cout << "[Debug]: Found " << vPathName.size() << " rainbow table file(s)..." << std::endl;
 	}
 	/* Start cracking! */
 	CCrackEngine crackEngine;
 	crackEngine.setSession(sSessionPathName, sProgressPathName, sPrecalcPathName, keepPrecalcFiles);
 	crackEngine.Run(vPathName, hashSet, maxThreads, maxMem, resumeSession, debug, enableGPU);
-    // boost::python::dict results = fCrackerResults(verifiedHashes, hashSet);
+	bool writeFile = (outputFile == "" ? true:false);
+    boost::python::dict results = otherResults(vLMHash, vNTLMHash, vUserName, hashSet, outputFile, writeFile, debug);
     return results;
 }
 
@@ -597,7 +619,7 @@ BOOST_PYTHON_MODULE(RainbowCrack)
 	using namespace boost::python;
 	def("RainbowCrack", rainbowCrackInit);
 	def("hash",
-		singleHash,
+		hash,
 		(
 			arg("sHash"), // Hash to be cracked
 			arg("pathToTables"),
@@ -614,7 +636,7 @@ BOOST_PYTHON_MODULE(RainbowCrack)
 		"single_hash(): Used to crack any single LM/NTLM/MD5 hash passed as an argument"
 	);
 	def("hash_list",
-		crack,
+		hashList,
 		(
 			arg("len"), // Length of ls
 			arg("ls"), // Python list of hashes
