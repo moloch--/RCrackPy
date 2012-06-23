@@ -338,6 +338,23 @@ bool LMPasswordCorrectCase( std::string sLMPassword, unsigned char* pNTLMHash, s
 	return fRet;
 }
 
+/* Python module version info */
+std::string version(bool debug)
+{
+	std::ostringstream stringBuilder;
+	stringBuilder << "RCrackPy v0.1";
+#ifdef _WIN32
+	stringBuilder << " (Windows)";
+#else
+	stringBuilder << " (Linux)";
+#endif
+	stringBuilder << " - RCrackI 0.7.0 Beta - Compiled on " << __DATE__
+			<< " at " << __TIME__;
+	if (debug)
+		std::cout << "[Debug]: " << stringBuilder.str() << std::endl;
+	return stringBuilder.str();
+}
+
 /* Gathers results and returns a Python dictionary */
 boost::python::dict fCrackerResults(std::vector<std::string> verifiedHashes, CHashSet hashSet)
 {
@@ -451,10 +468,14 @@ boost::python::dict hash(std::string sHash, std::string pathToTables,
 		bool debug, bool keepPrecalcFiles, int enableGPU, unsigned int maxThreads,
 		uint64 maxMem)
 {
-	CHashSet hashSet;
-	bool resumeSession = false; // Sessions not currently supported
 	std::vector<std::string> verifiedHashes;
 	std::vector<std::string> vPathName;
+	bool resumeSession = false; // Sessions not currently supported
+	CHashSet hashSet;
+	if ( debug )
+	{
+		version(debug);
+	}
 	/* Setup hashes */
 	if (NormalizeHash(sHash))
 	{
@@ -499,6 +520,10 @@ boost::python::dict hashList(unsigned int len, boost::python::list& ls, std::str
 	std::vector<std::string> verifiedHashes;
 	std::vector<std::string> vPathName;
 	std::vector<std::string> hashes;
+	if ( debug )
+	{
+		version(debug);
+	}
 	for (unsigned int index = 0; index < len; ++index) {
 		std::string sHash = boost::python::extract<std::string>(ls[index]);
 		if (NormalizeHash(sHash))
@@ -546,6 +571,10 @@ boost::python::dict pwdump(std::string pwdumpFilePath, std::string pathToTables,
 	std::vector<std::string> vPathName;
 	bool resumeSession = false; // Sessions not currently supported
 	CHashSet hashSet;
+	if ( debug )
+	{
+		version(debug);
+	}
 	/* Parse file for hashes */
 	LoadLMHashFromPwdumpFile(pwdumpFilePath, vUserName, vLMHash, vNTLMHash);
 	for (uint32 index = 0; index < vLMHash.size(); index++)
@@ -581,6 +610,10 @@ boost::python::dict cain(std::string cainFilePath, std::string pathToTables,
 	std::vector<std::string> vPathName;
 	bool resumeSession = false; // Sessions not currently supported
 	CHashSet hashSet;
+	if ( debug )
+	{
+		version(debug);
+	}
 	/* Parse file for hashes */
 	LoadLMHashFromCainLSTFile(cainFilePath, vUserName, vLMHash, vNTLMHash);
 	for (uint32 index = 0; index < vLMHash.size(); index++)
@@ -608,18 +641,13 @@ void rainbowCrackInit()
 	NULL; // Do nothing
 }
 
-/* Python module version info */
-void version() {
-	printf("RCrackPy v0.1 - RCrackI 0.7.0 Beta - Compiled on %s at %s\n", __DATE__, __TIME__);
-}
-
 /* Python module definitions */
 BOOST_PYTHON_MODULE(RainbowCrack)
 {
 	using namespace boost::python;
 	const unsigned int THREADS = 1;
 	def("RainbowCrack", rainbowCrackInit);
-	def("version", version);
+	def("version", version, arg("debug") = false, "Displays version information");
 	def("hash",
 		hash,
 		(
@@ -635,7 +663,7 @@ BOOST_PYTHON_MODULE(RainbowCrack)
 			arg("maxThreads") = THREADS,
 			arg("maxMem") = 0
 		),
-		"single_hash(): Used to crack any single LM/NTLM/MD5 hash passed as an argument"
+		"hash(): Used to crack any single LM/NTLM/MD5 hash passed as an argument"
 	);
 	def("hash_list",
 		hashList,
@@ -653,7 +681,7 @@ BOOST_PYTHON_MODULE(RainbowCrack)
 			arg("maxThreads") = THREADS,
 			arg("maxMem") = 0
 		),
-		"crack(length, list): Used to crack a list of hashes"
+		"hash_list(length, list): Used to crack a Python list of LM/NTLM/MD5 hashes"
 	);
 	def("pwdump",
 		pwdump,

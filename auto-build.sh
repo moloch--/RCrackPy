@@ -7,5 +7,6 @@ echo "[*] Your default Python version is:"
 python -V
 echo ""
 cd ./RCrackPy
+make
 make clean
 # make install
