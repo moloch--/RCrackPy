@@ -7,10 +7,16 @@ Compile RCrackPy and put RainbowCrack.so
 onto the PYTHONPATH or in the cwd
 '''
 
-import RainbowCrack # RainbowCrack.so
+import os
+import RainbowCrack # This is RainbowCrack.so
 
-# MD5 Rainbow Tables Directory
+# Rainbow tables directory
 tables = "/media/data/RainbowTables/MD5/"
+
+print "[*] " + RainbowCrack.version()
+if not os.path.exists(tables):
+	print '[!] Rainbow tables directory not found'
+	os._exit(1)
 
 md5_hashes = [
 	"af5b3d17aa1e2ff2a0f83142d692d701", 
@@ -19,13 +25,13 @@ md5_hashes = [
 	]
 md5_hash = "af5b3d17aa1e2ff2a0f83142d692d701"
 
-RainbowCrack.version()
+# hash_list takes two arguments, the length of the list, and the list itself
+# in addition to the tables directory argument
 print "[*] Cracking a list of hashes, please wait..."
-# crack(LengthOfList, List, PathToTables)
-results = RainbowCrack.crack(len(md5_hashes), md5_hashes, tables, maxThreads = 4)
-print "Got:", results
+results = RainbowCrack.hash_list(len(md5_hashes), md5_hashes, tables, maxThreads = 4)
+print "[+] Got:", results
 
 print "[*] Cracking single hash, please wait..."
-# crack(StrHash, PathToTables)
-result = RainbowCrack.single_hash(md5_hash, tables, maxThreads = 4)
-print "Got:", result
+# hash takes a single string as an argument
+result = RainbowCrack.hash(md5_hash, tables, maxThreads = 4)
+print "[+] Got:", result
