@@ -1320,7 +1320,7 @@ void CCrackEngine::SearchRainbowTable( std::string pathName, CHashSet& hs )
 
 void CCrackEngine::Run(std::vector<std::string> vPathName, CHashSet& hs, int i_maxThreads, uint64 i_maxMem, bool resume, bool bDebug, int gpu)
 {
-	uint32 i;
+	uint32 index;
 
 #ifndef _WIN32
 	tty_init();
@@ -1338,11 +1338,11 @@ void CCrackEngine::Run(std::vector<std::string> vPathName, CHashSet& hs, int i_m
 	std::sort(vPathName.begin(), vPathName.end());
 
 	// Run
-	for (i = 0; i < vPathName.size() && hs.AnyhashLeft(); i++)
+	for (index = 0; index < vPathName.size() && hs.AnyhashLeft(); index++)
 	{
-		SearchRainbowTable(vPathName[i], hs);
+		SearchRainbowTable(vPathName[index], hs);
 		if ( debug )
-			printf("\n");
+			std::cout << std::endl;
 	}
 
 	// delete precalc files

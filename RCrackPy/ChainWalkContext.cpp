@@ -26,6 +26,7 @@
  */
 
 #include "ChainWalkContext.h"
+#include "RainbowCrackExceptions.h"
 
 #include <python2.7/Python.h>
 #include <boost/python.hpp>
@@ -196,8 +197,7 @@ bool CChainWalkContext::LoadCharset( std::string sName )
 	}
 	else
 	{
-        PyErr_SetString(PyExc_ValueError, "Can't open charset configuration file");
-        throw boost::python::error_already_set();
+        throw CharSetIOError;
 	}
 
 	return false;
@@ -215,7 +215,9 @@ bool CChainWalkContext::SetHashRoutine( std::string sHashRoutineName )
 		return true;
 	}
 	else
+	{
 		return false;
+	}
 }
 
 bool CChainWalkContext::SetPlainCharset( std::string sCharsetName, int nPlainLenMin, int nPlainLenMax)

@@ -39,6 +39,7 @@
 
 #include <python2.7/Python.h>
 #include <boost/python.hpp>
+#include <exception>
 
 #include "Public.h"
 #include "CrackEngine.h"
@@ -47,8 +48,13 @@
 #ifdef _WIN32
 	#include <io.h>
 #else
+	#include <execinfo.h>
+	#include <signal.h>
+	#include <stdlib.h>
+	#include <stdio.h>
 	#include <unistd.h>
 	#include <dirent.h>
+	const unsigned int TRACE_SIZE = 10;
 #endif
 
 #if defined(_WIN32) && !defined(__GNUC__)
@@ -169,6 +175,20 @@ void GetTableList( std::string sWildCharPathName, std::vector<std::string>& vPat
 		}
 	}
 }
+#endif
+
+#ifndef _WIN32
+
+/* Segfault handler */
+void handler(int sig) {
+	void *trace[TRACE_SIZE];
+	size_t size;
+	size = backtrace(trace, TRACE_SIZE);
+	fprintf(stderr, "Error: signal %d:\n", sig);
+	backtrace_symbols_fd(trace, size, 2);
+	exit(1);
+}
+
 #endif
 
 bool NormalizeHash(std::string& sHash)
@@ -348,8 +368,7 @@ std::string version(bool debug)
 #else
 	stringBuilder << " (Linux)";
 #endif
-	stringBuilder << " - RCrackI 0.7.0 Beta - Compiled on " << __DATE__
-			<< " at " << __TIME__;
+	stringBuilder << " - RCrackI 0.7.0 Beta - Compiled on " << __DATE__ << " at " << __TIME__;
 	if (debug)
 		std::cout << "[Debug]: " << stringBuilder.str() << std::endl;
 	return stringBuilder.str();
@@ -462,70 +481,25 @@ boost::python::dict otherResults(std::vector<std::string>& vLMHash,
 }
 
 /* Cracks a single hash and returns a Python dictionary */
-boost::python::dict hash(std::string sHash, std::string pathToTables,
+boost::python::dict crack(boost::python::list& hashes, std::string pathToTables,
 		std::string outputFile, std::string sSessionPathName,
 		std::string sProgressPathName, std::string sPrecalcPathName,
 		bool debug, bool keepPrecalcFiles, int enableGPU, unsigned int maxThreads,
 		uint64 maxMem)
 {
-	std::vector<std::string> verifiedHashes;
-	std::vector<std::string> vPathName;
-	bool resumeSession = false; // Sessions not currently supported
-	CHashSet hashSet;
-	if ( debug )
-	{
-		version(debug);
-	}
-	/* Setup hashes */
-	if (NormalizeHash(sHash))
-	{
-		verifiedHashes.push_back(sHash);
-	}
-	else
-	{
-		std::ostringstream stringBuilder;
-		stringBuilder << "Invalid hash: " << sHash.c_str();
-		std::string message = stringBuilder.str();
-        PyErr_SetString(PyExc_ValueError, message.c_str());
-        throw boost::python::error_already_set();
-	}
-	for (unsigned int index = 0; index < verifiedHashes.size(); ++index)
-	{
-		hashSet.AddHash(verifiedHashes[index]);
-	}
-	/* Load rainbow tables */
-	GetTableList(pathToTables, vPathName);
-	if ( debug )
-	{
-		std::cout << "[Debug]: Found " << vPathName.size() << " rainbow table file(s)..." << std::endl;
-	}
-	/* Start cracking! */
-	CCrackEngine crackEngine;
-	crackEngine.setSession(sSessionPathName, sProgressPathName, sPrecalcPathName, keepPrecalcFiles);
-	crackEngine.Run(vPathName, hashSet, maxThreads, maxMem, resumeSession, debug, enableGPU);
-	/* Gather results */
-	boost::python::dict results = fCrackerResults(verifiedHashes, hashSet);
-	return results;
-}
-
-/* Cracks a single hash and returns a Python dictionary */
-boost::python::dict hashList(unsigned int len, boost::python::list& ls, std::string pathToTables,
-		std::string outputFile, std::string sSessionPathName,
-		std::string sProgressPathName, std::string sPrecalcPathName,
-		bool debug, bool keepPrecalcFiles, int enableGPU, unsigned int maxThreads,
-		uint64 maxMem)
-{
+#ifndef _WIN32
+	signal(SIGSEGV, handler); // Register segfault handler
+#endif
 	CHashSet hashSet;
 	bool resumeSession = false; // Sessions not currently supported
 	std::vector<std::string> verifiedHashes;
 	std::vector<std::string> vPathName;
-	std::vector<std::string> hashes;
 	if ( debug )
 	{
-		version(debug);
+		std::cout << "[Debug]: List contains " << boost::python::len(hashes) << " hash(es)" << std::endl;
 	}
-	for (unsigned int index = 0; index < len; ++index) {
-		std::string sHash = boost::python::extract<std::string>(ls[index]);
+	for (unsigned int index = 0; index < boost::python::len(hashes); ++index) {
+		std::string sHash = boost::python::extract<std::string>(hashes[index]);
 		if (NormalizeHash(sHash))
 		{
 			verifiedHashes.push_back(sHash);
@@ -547,7 +521,7 @@ boost::python::dict hashList(unsigned int len, boost::python::list& ls, std::str
 	GetTableList(pathToTables, vPathName);
 	if (debug)
 	{
-		std::cout << "[Debug]: Found " << vPathName.size() << " rainbow table file(s)..." << std::endl;
+		std::cout << "[Debug]: Found " << vPathName.size() << " rainbow table file(s)" << std::endl;
 	}
 	/* Start cracking! */
 	CCrackEngine crackEngine;
@@ -589,11 +563,21 @@ boost::python::dict pwdump(std::string pwdumpFilePath, std::string pathToTables,
 		std::cout << "[Debug]: Found " << vPathName.size() << " rainbow table file(s)..." << std::endl;
 	}
 	/* Start cracking! */
-	CCrackEngine crackEngine;
-	crackEngine.setSession(sSessionPathName, sProgressPathName, sPrecalcPathName, keepPrecalcFiles);
-	crackEngine.Run(vPathName, hashSet, maxThreads, maxMem, resumeSession, debug, enableGPU);
-    boost::python::dict results = otherResults(vLMHash, vNTLMHash, vUserName, hashSet, outputFile, debug);
-    return results;
+	boost::python::dict results;
+	CCrackEngine* crackEngine = new CCrackEngine();
+	crackEngine->setSession(sSessionPathName, sProgressPathName, sPrecalcPathName, keepPrecalcFiles);
+	try {
+		crackEngine->Run(vPathName, hashSet, maxThreads, maxMem, resumeSession, debug, enableGPU);
+		results = otherResults(vLMHash, vNTLMHash, vUserName, hashSet, outputFile, debug);
+	} catch (std::exception& error) {
+		if (debug) {
+			std::cout << "[Debug]: Caught a C++ exception, converting to Python exception ..." << std::endl;
+		}
+		delete crackEngine; // Release GIL
+		PyErr_SetString(PyExc_ValueError, error.what());
+		throw boost::python::error_already_set();
+	}
+	return results;
 }
 
 /* Crack a Cain & Abel file */
@@ -638,7 +622,11 @@ boost::python::dict cain(std::string cainFilePath, std::string pathToTables,
 /* Python constructor (required) */
 void rainbowCrackInit()
 {
-	NULL; // Do nothing
+	NULL;
+//	if(!Py_IsInitialized()) {
+//		Py_Initialize();
+//		PyEval_InitThreads();
+//	}
 }
 
 /* Python module definitions */
@@ -646,12 +634,10 @@ BOOST_PYTHON_MODULE(RainbowCrack)
 {
 	using namespace boost::python;
 	const unsigned int THREADS = 1;
-	def("RainbowCrack", rainbowCrackInit);
-	def("version", version, arg("debug") = false, "Displays version information");
-	def("hash",
-		hash,
+	def("crack",
+		crack,
 		(
-			arg("sHash"), // Hash to be cracked
+			arg("hahes"), // Python list of hashes
 			arg("pathToTables"),
 			arg("outputFile") = "",
 			arg("sSessionPathName") = "rcracki.session",
@@ -663,25 +649,7 @@ BOOST_PYTHON_MODULE(RainbowCrack)
 			arg("maxThreads") = THREADS,
 			arg("maxMem") = 0
 		),
-		"hash(): Used to crack any single LM/NTLM/MD5 hash passed as an argument"
-	);
-	def("hash_list",
-		hashList,
-		(
-			arg("len"), // Length of ls
-			arg("ls"), // Python list of hashes
-			arg("pathToTables"),
-			arg("outputFile") = "",
-			arg("sSessionPathName") = "rcracki.session",
-			arg("sProgressPathName") = "rcracki.progress",
-			arg("sPrecalcPathName") = "rcracki.precalc",
-			arg("debug") = false,
-			arg("keepPrecalcFiles") = false,
-			arg("enableGPU") = 0,
-			arg("maxThreads") = THREADS,
-			arg("maxMem") = 0
-		),
-		"hash_list(length, list): Used to crack a Python list of LM/NTLM/MD5 hashes"
+		"hash_list([hashes], path_to_tables): Used to crack a Python list of LM/NTLM/MD5 hashes"
 	);
 	def("pwdump",
 		pwdump,
@@ -715,5 +683,12 @@ BOOST_PYTHON_MODULE(RainbowCrack)
 			arg("maxMem") = 0
 		)
 	);
+	def("version",
+		version,
+		(
+			arg("debug") = false
+		)
+	);
+
 }
 

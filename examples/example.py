@@ -23,15 +23,8 @@ md5_hashes = [
 	"5d41402abc4b2a76b9719d911017c592",
 	"5f4dcc3b5aa765d61d8327deb882cf99",
 	]
-md5_hash = "af5b3d17aa1e2ff2a0f83142d692d701"
 
-# hash_list takes two arguments, the length of the list, and the list itself
-# in addition to the tables directory argument
 print "[*] Cracking a list of hashes, please wait..."
-results = RainbowCrack.hash_list(len(md5_hashes), md5_hashes, tables, maxThreads = 4)
+results = RainbowCrack.crack(md5_hashes, tables, debug=True, maxThreads=4)
 print "[+] Got:", results
 
-print "[*] Cracking single hash, please wait..."
-# hash takes a single string as an argument
-result = RainbowCrack.hash(md5_hash, tables, maxThreads = 4)
-print "[+] Got:", result
